@@ -60,10 +60,10 @@ for(const light of [this.sun,this.fill,...this.scene.children.filter(o=>o.isHemi
 this.camera.layers.enable(1);
 this.particleGeometry=new THREE.BufferGeometry();this.particlePositions=new Float32Array(1536);this.particleColors=new Float32Array(1536);this.particleGeometry.setAttribute('position',new THREE.BufferAttribute(this.particlePositions,3));this.particleGeometry.setAttribute('color',new THREE.BufferAttribute(this.particleColors,3));this.particleSystem=new THREE.Points(this.particleGeometry,new THREE.PointsMaterial({size:5,map:glowMap,transparent:true,vertexColors:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:false}));this.particleSystem.frustumCulled=false;this.scene.add(this.particleSystem);
 this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();window.dispatchEvent(new Event('blur'));document.querySelector('#renderNotice').textContent='La imagen se pausó. Recargá para volver a jugar.';});this.canvas.addEventListener('webglcontextrestored',()=>location.reload());
-window.renderInfo=()=>({engine:'Three.js',revision:THREE.REVISION,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,platforms:this.platforms.size,quality:this.low?'low':'high',width:this.canvas.width,height:this.canvas.height,shadows:this.renderer.shadowMap.enabled});
+window.renderInfo=()=>({engine:'Three.js',revision:THREE.REVISION,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,platforms:this.platforms.size,quality:this.quality,width:this.canvas.width,height:this.canvas.height,shadows:this.renderer.shadowMap.enabled});
 window.orbScreenPosition=()=>{if(!window.secretWorld)return;const point=new THREE.Vector3(this.orb.position.x,this.orb.position.y,this.orb.position.z).project(this.camera);return {x:(point.x+1)*WIDTH*.5,y:(1-point.y)*HEIGHT*.5};};
 }
-setQuality(quality){this.low=quality==='low';this.renderer.setPixelRatio(this.low?.5:1);this.renderer.shadowMap.enabled=!this.low;}
+setQuality(quality){this.quality=quality;this.low=quality==='low';this.renderer.setPixelRatio(window.secretDisplay?.resolution??(this.low?.5:1));this.renderer.shadowMap.enabled=quality==='high';}
 buildSky(){
 this.sky=new THREE.Mesh(new THREE.PlaneGeometry(7000,4000),new THREE.ShaderMaterial({depthWrite:false,uniforms:{},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv;void main(){vec3 low=vec3(.09,.24,.28);vec3 high=vec3(.025,.065,.14);gl_FragColor=vec4(mix(low,high,smoothstep(.15,.8,vUv.y)),1.);}',fog:false}));this.sky.position.set(800,700,-2200);this.scene.add(this.sky);
 this.moon=new THREE.Group();const moonSurface=buildMoonSurface();moonSurface.castShadow=true;moonSurface.receiveShadow=true;this.moon.add(moonSurface);glow(this.moon,0x9ecac8,430,0,0,-10);this.moon.position.set(1260,735,-1700);this.scene.add(this.moon);
@@ -101,7 +101,11 @@ this.renderer.info.reset();
 const {t,cam,player:p,orb:o}=s;const entrance=s.entrance||0,ease=entrance*entrance*(3-2*entrance),blend=Math.max(s.cinema?.blend||0,entrance>0?1:0,ease),nameScene=['name','ageIntro','ageReveal','coopIntro','coopOutro'].includes(s.cinema?.stage),conversationX=nameScene?(p.x+o.x)/2:p.x+60,focusX=THREE.MathUtils.lerp(THREE.MathUtils.lerp(cam+800,conversationX,blend),p.x-105,ease),focusY=THREE.MathUtils.lerp(450,HEIGHT-p.y+4,blend),arc=Math.sin((s.cinema?.time||0)*.22)*(nameScene?.085:.025)*blend;
 this.camera.zoom=1+(nameScene?1.35:1.7)*blend;this.camera.position.set(focusX+Math.sin(arc)*1300,focusY+(nameScene?52:30)*blend,1300);this.camera.lookAt(focusX,focusY,nameScene?28:0);this.camera.updateProjectionMatrix();this.sky.position.x=cam+800;this.moon.position.x=cam+1260-cam*.035;this.stars.position.x=cam*.8;this.sun.position.set(cam+400,1250,750);this.sun.target.position.set(cam+800,350,-40);this.sun.target.updateMatrixWorld();
 this.wind.update(t,cam,this.low);
-const forest=s.coop?THREE.MathUtils.smoothstep(p.x,13000,13600)*(1-THREE.MathUtils.smoothstep(p.x,19100,19700)):0;
+const shadeTarget=s.coop&&!s.coop.done&&!entrance?THREE.MathUtils.smoothstep(p.x,13000,13800)*(1-THREE.MathUtils.smoothstep(p.x,18400,19300)):0;
+const shadeDt=this.shadeTime===undefined?0:Math.max(0,Math.min(t-this.shadeTime,.05));this.shadeTime=t;
+if(entrance||!s.coop)this.forestShade=0;
+this.forestShade=THREE.MathUtils.lerp(this.forestShade||0,shadeTarget,1-Math.exp(-shadeDt*1.3));
+const forest=this.forestShade;
 this.sun.intensity=3.3-forest*2.4;this.fill.intensity=1.5-forest*.9;
 for(const light of this.scene.children)if(light.isHemisphereLight)light.intensity=2.35-forest*1.35;
 if(!this.coopArt){this.coopArt=new THREE.Group();this.scene.add(this.coopArt);
@@ -124,6 +128,15 @@ const floatTime=this.menuFloatTime,floatWeight=ease;
 this.boy.update(s,floatWeight,floatTime);
 const floor=s.platforms.filter(f=>!f.hidden&&!f.disabled&&p.x+38>f.x&&p.x<f.x+f.w&&f.y>=p.y+60).sort((a,b)=>a.y-b.y)[0];this.heroShadow.visible=!!floor;if(floor){this.heroShadow.position.set(p.x+19,HEIGHT-floor.y+2,27);this.heroShadow.material.opacity=Math.max(.06,.28-(floor.y-p.y-62)*.0007);}
 this.lifeOrb.update(t,o,p,s.speaker);
+const flight=s.mode==='end'?THREE.MathUtils.smoothstep(s.ending||0,0,6):0;
+this.orb.scale.setScalar(1-flight*.96);
+if(s.mode==='end'){
+if(!this.endOrigin)this.endOrigin=this.orb.position.clone();
+const starTarget=new THREE.Vector3(.28,.67,0).unproject(this.camera);starTarget.z=this.endOrigin.z;
+this.orb.position.lerpVectors(this.endOrigin,starTarget,flight);
+const screen=this.orb.position.clone().project(this.camera);
+this.endStar={x:(screen.x+1)*800,y:(1-screen.y)*450,flight};
+}else{this.endOrigin=null;this.endStar=null;}
 this.gates[0].visible=!s.gate;this.gates[1].visible=!s.switchOn;this.letterGate.visible=s.questActive||s.countActive;this.letterGate.position.set(6106,HEIGHT-620,0);this.letterCurtain.visible=s.questActive&&s.doorTime<=0;for(const g of this.gates)g.parent.visible=!s.questActive&&!s.countActive;
 const leverOn=s.questActive?s.doorTime>0:s.switchOn;
 this.switch.visible=!s.countActive;this.switch.position.set(s.questActive?4825:5250,s.questActive?284:150,0);
@@ -135,10 +148,10 @@ let n=0;const color=new THREE.Color();for(const v of s.particles){if(n>=512)brea
 // and then suddenly lose brightness when the darkness finishes fading.
 if(entrance>0)this.camera.layers.set(0);
 this.renderer.render(this.scene,this.camera);
-const coopShade=!!s.coop&&!entrance&&!s.cinema?.stage;
+const coopShade=!entrance&&forest>.001;
 if(entrance>0||coopShade){
 this.renderer.autoClear=false;this.veilMaterial.uniforms.amount.value=ease;this.veilMaterial.uniforms.storybook.value=entrance>0?1:0;
-if(coopShade){const orbScreen=this.orb.position.clone().project(this.camera);this.veilMaterial.uniforms.amount.value=.72;this.veilMaterial.uniforms.center.value.set((orbScreen.x+1)*.5,(orbScreen.y+1)*.5);}
+if(coopShade){const orbScreen=this.orb.position.clone().project(this.camera);this.veilMaterial.uniforms.amount.value=.72*forest;this.veilMaterial.uniforms.center.value.set((orbScreen.x+1)*.5,(orbScreen.y+1)*.5);}
 this.renderer.render(this.veilScene,this.veilCamera);
 this.renderer.clearDepth();const background=this.scene.background;this.scene.background=null;this.camera.layers.set(1);this.renderer.render(this.scene,this.camera);this.camera.layers.enable(0);this.scene.background=background;this.renderer.autoClear=true;
 }

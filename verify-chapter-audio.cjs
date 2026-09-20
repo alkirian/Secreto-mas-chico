@@ -11,7 +11,8 @@ const noop=()=>{},element=id=>elements[id]??={getContext:()=>({}),classList:{add
 const box={console,Math,Set,Uint8Array,atob,window:{AudioContext:Context},document:{querySelector:element,querySelectorAll:()=>[],body:element('body'),addEventListener:noop},navigator:{},addEventListener:noop,requestAnimationFrame:noop};
 vm.createContext(box);vm.runInContext(fs.readFileSync('dist/number-audio.js','utf8'),box);
 assert.equal(Buffer.from(box.window.chapterVoiceData.coopIntro,'base64').byteLength,fs.statSync('sfx/coop-intro.mp3').size);
-vm.runInContext(fs.readFileSync('dist/game.js','utf8').replace('})();','window.qa={initAudio,beginCinema,beginCounting,updateChapterVoice,skipCinema,pause,reset,collectCount,get voice(){return chapterVoice},get dialog(){return dialog},get queued(){return queue.length},setup(){mode="play";cinema.stage=null;countValue=5;const v=countLights[5];Object.assign(player,{x:v.x-19,y:v.y-62,ground:true});}};})();'),box);
+assert.equal(Buffer.from(box.window.chapterVoiceData.final,'base64').byteLength,fs.statSync('sfx/final-dialog.mp3').size);
+vm.runInContext(fs.readFileSync('dist/game.js','utf8').replace('})();','window.qa={initAudio,beginCinema,beginCounting,finalDialogue,updateChapterVoice,skipCinema,pause,reset,collectCount,get voice(){return chapterVoice},get dialog(){return dialog},get queued(){return queue.length},setup(){mode="play";cinema.stage=null;countValue=5;const v=countLights[5];Object.assign(player,{x:v.x-19,y:v.y-62,ground:true});}};})();'),box);
 const flush=()=>new Promise(r=>setImmediate(r));
 (async()=>{
 const q=box.window.qa;q.initAudio();q.beginCounting();
@@ -31,6 +32,11 @@ assert.equal(q.voice.lines.length,2);assert.equal(q.queued,2,'the remaining coop
 q.updateChapterVoice(1.3);q.updateChapterVoice(.01);await flush();
 assert.equal(played.at(-1).size,fs.statSync('sfx/coop-intro.mp3').size);
 q.skipCinema();
+const finalLines=q.finalDialogue();q.beginCinema('final',finalLines);
+assert.equal(q.voice.lines.length,11);assert.equal(q.queued,0);assert.equal(q.voice.lines[0].text,'Coti.');assert.equal(q.voice.lines.at(-1).text,'¿Me guardás un lugar para jugar?');
+q.updateChapterVoice(1.3);q.updateChapterVoice(.01);await flush();
+assert.equal(played.at(-1).size,fs.statSync('sfx/final-dialog.mp3').size);
+q.skipCinema();
 q.beginCounting();q.reset();assert.equal(q.voice,null,'reset cancels voice and pending playback');
-console.log('PASS: question/reflection/cooperation sources, subtitle clock, queued dialogue, pause/resume, skip and reset');
+console.log('PASS: question/reflection/cooperation/final sources, exact final subtitles, subtitle clock, pause/resume, skip and reset');
 })().catch(e=>{console.error(e);process.exitCode=1;});

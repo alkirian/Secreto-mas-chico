@@ -25,3 +25,43 @@ body:not(.playing) .utilities{display:none}
 @media(prefers-reduced-motion:reduce){.menu-fireflies i{animation:none;opacity:.65}.departing .menu-content{transform:none}}
 .quality-label{display:block;margin-top:16px;font:15px system-ui;color:#f5e9d6}.quality-select{margin-left:8px;padding:8px 10px;border:1px solid #e9d7b488;border-radius:7px;background:#11283e;color:#fff;font:15px system-ui}.quality-select:focus-visible{outline:3px solid #ffda87;outline-offset:3px}.quality-status,.pad-status{font:13px/1.4 system-ui;max-width:520px;margin-top:8px;color:#c6d9df}#cover .quality-label,#cover .quality-status,#cover .pad-status{color:#542540}#cover #pad{font:13px/1.4 system-ui;margin-top:8px;color:#542540}#pause{overflow:auto}.playing .utilities:focus-within{opacity:1}
 .menu-settings{margin:16px auto 0;padding:12px 15px;background:#fff0dcf0;border:1px solid #fff3d9;border-radius:12px;max-width:480px}.menu-settings .quality-label{margin-top:0}.menu-settings .quality-status,#cover .menu-settings #pad{font-size:clamp(14px,1.1vw,18px);line-height:1.45}#cover .menu-settings .quality-status,#cover .menu-settings #pad{color:#452237}
+
+/* Viewport-safe controls: the 16:9 camera always keeps its full field of view. */
+html,body{overscroll-behavior:none}main{height:100dvh}
+canvas{width:min(100vw,177.777dvh);height:min(100dvh,56.25vw);touch-action:none}
+button,select{touch-action:manipulation}#touch{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;pointer-events:none;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom))}
+#touch button{pointer-events:auto;touch-action:none;width:clamp(60px,9vw,84px);height:clamp(60px,9vw,84px);padding:4px;border-radius:22px;font:600 26px system-ui;border:1px solid #e6f6ff80;background:#183345b8;box-shadow:0 3px 12px #0004}
+#touch button small{display:block;font:600 11px system-ui}#touch button.pressed{background:#ffe4a3;color:#342435;transform:scale(.95)}
+#touch button:focus:not(:focus-visible){outline:none}.game-paused #touch{display:none!important}
+.utilities{top:max(10px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right))}.utilities button{min-height:44px}
+#pauseButton{display:none}.touch-playing #pauseButton{display:block}
+.menu-actions{display:flex;justify-content:center;gap:8px;margin-top:12px}.menu-actions button,.tv-help-button{padding:10px 14px;min-height:44px;font:600 13px system-ui;background:#fff0dce8;color:#542540;border:1px solid #fff3d9}.tv-help-button{margin-top:14px}
+.rotate-hint{display:none;font:13px/1.4 system-ui;color:#542540;margin:10px 0 0}
+#displayStatus{position:absolute;z-index:6;top:65px;left:50%;transform:translateX(-50%);max-width:80%;font:14px/1.5 system-ui;background:#102b42eb;color:#fff1d2;border-radius:10px;padding:10px 14px;pointer-events:none}#displayStatus:empty{display:none}
+#tvHelp{width:min(620px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding:24px;border:1px solid #d7bc8477;border-radius:20px;background:#102435;color:#f6efda;box-shadow:0 20px 80px #0009;overflow:auto;overscroll-behavior:contain}
+#tvHelp::backdrop{background:#030b18c9}#tvHelp h2{font-size:30px;margin:0 0 16px}#tvHelp p,#tvHelp li{font:15px/1.55 system-ui;color:#d5e1e4;margin:0 0 14px}#tvHelp ol{padding-left:22px}#tvHelp .tv-note,#tvHelp .tv-sources{font-size:13px}#tvHelp a{color:#ffe1a0}#tvHelp button{min-height:44px}
+#pause{padding-top:max(60px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}
+@media(any-pointer:coarse){
+  .playing #touch{display:none}.touch-playing #touch{display:flex}
+  .playing .utilities{opacity:1}.utilities{gap:6px}.utilities button{font-size:12px;padding:8px 12px}
+  .skip-cinema{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 94px);right:max(16px,env(safe-area-inset-right))}
+  .skip-cinema span{display:none}#cover{overflow:auto}#pause{justify-content:flex-start}
+}
+@media(max-width:600px) and (orientation:portrait){
+  #cover{padding:max(20px,env(safe-area-inset-top)) 16px 16px;justify-content:flex-start}
+  #cover h1{font-size:clamp(48px,14vw,76px);margin-bottom:14px;color:#ffe4b5;text-shadow:0 2px 18px #0009}.menu-content{width:100%;max-width:440px;margin:auto}
+  .menu-settings{margin-top:12px;padding:10px}.menu-settings .quality-status,#cover .menu-settings #pad{font-size:12px}
+  .rotate-hint{display:block;color:#c9dce4}.quality-select{max-width:70%;font-size:14px}
+}
+@media(max-height:540px) and (orientation:landscape){
+  #cover{padding:max(12px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
+  .menu-content{width:min(78%,740px);display:grid;grid-template-columns:1fr 1.15fr;align-items:center;gap:10px 20px}
+  #cover h1{grid-column:1;grid-row:1;font-size:clamp(44px,12dvh,65px);margin:0}
+  #start{grid-column:1;grid-row:2;padding:10px 24px;min-height:44px;min-width:0;justify-self:center}
+  .menu-settings{grid-column:2;grid-row:1 / 3;margin:0;padding:12px;width:100%}.menu-settings .quality-label{font-size:13px}.quality-select{margin:5px 0 0;max-width:100%;font-size:13px}
+  .menu-settings .quality-status,#cover .menu-settings #pad{font-size:12px;line-height:1.4}
+  .menu-actions{grid-column:1 / -1;margin:0}.menu-actions button{font-size:12px;padding:8px 12px}
+  #pause{padding:55px max(24px,env(safe-area-inset-right)) 20px max(24px,env(safe-area-inset-left))}
+  #pause h2{font-size:28px;margin:8px 0 12px}#pause button{padding:10px 20px;font-size:15px}#pause .eyebrow{font-size:11px}
+  #touch{gap:10px}#touch button{width:60px;height:60px;border-radius:18px}
+}
