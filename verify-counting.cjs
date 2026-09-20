@@ -19,8 +19,8 @@ const enemy=g.enemies.find(e=>e.min===9940);g.setPos(enemy.x,enemy.y-65);g.p.vy=
 jump(9840,10500);jump(10500,10820);light(5);
 assert.equal(g.plats.filter(p=>p.kind==='light').length,6,'point creates six bridge pieces');
 for(const [a,b] of [[10820,11330],[11330,11485],[11485,11640],[11640,11795],[11795,11950],[11950,12105],[12105,12360]])jump(a,b);
-light(6);assert.equal(g.state.countValue,6);assert.equal(g.state.cinema.stage,'ageReveal');assert(g.state.queue.some(v=>v.text==='Tenés seis años.'));assert(g.state.queue.every(v=>v.speaker!=='VOS'));
+light(6);assert.equal(g.state.countValue,6);assert.equal(g.state.cinema.stage,'ageReveal');assert.equal(g.state.dialog.text,'¡Seis!');assert(g.state.queue.every(v=>v.speaker!=='VOS'));
 const x=g.p.x;tick(180,{axis:1,jump:true,jp:true});assert(Math.abs(g.p.x-x)<1,'age reveal owns controls');g.render();tick(4300);
-assert(!g.state.countActive&&g.state.countComplete,'age reveal leads to next adventure');assert(g.p.x>=6520&&g.p.x<6600);assert(g.state.flags.calmDone,'old spoken age exchange is skipped');assert.equal(g.state.chapterFade,0);
+assert(!g.state.countActive&&g.state.countComplete,'age reveal leads to next adventure');assert(Math.abs(g.p.x-x)<1,'third chapter continues at the sixth light');assert(g.state.cinema.stage==='coopIntro'||g.state.cinema.stage===null);assert.equal(g.state.chapterFade,0);
 g.reset();assert.equal(g.state.countValue,0);assert.equal(g.lights.length,0);assert(g.state.questActive,'replay begins at letters');
 console.log('PASS: automatic chapter transition, ordered counting, 16 platform jumps, moving and fragile platforms, stomp, checkpoints, six-piece bridge, silent-player age reveal and replay');
