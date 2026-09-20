@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-for (const file of fs.readdirSync(__dirname).filter(name => /^verify(?:-.+)?\.cjs$/.test(name) && name !== 'verify-all.cjs').sort()) {
+for (const file of fs.readdirSync(__dirname).filter(name => /^verify(?:-.+)?\.[cm]js$/.test(name) && name !== 'verify-all.cjs').sort()) {
   console.log(`\n${file}`);
   const result = spawnSync(process.execPath, [path.join(__dirname, file)], { cwd: __dirname, stdio: 'inherit' });
   if (result.error) throw result.error;
