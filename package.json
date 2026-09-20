@@ -1,1 +1,21 @@
-{"name":"el-secreto-mas-chiquito","version":"3.0.0","private":true,"scripts":{"build":"node build.cjs","test":"node verify.cjs","start":"node server.cjs"},"dependencies":{"three":"0.186.0"},"devDependencies":{"esbuild":"0.28.2","ffmpeg-static":"5.3.0"}}
+{
+  "name": "el-secreto-mas-chiquito",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node verify-all.cjs",
+    "start": "node server.cjs",
+    "test:assets": "node verify-assets.cjs"
+  },
+  "dependencies": {
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "ffmpeg-static": "5.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -3,19 +3,23 @@
 #world,#game{position:absolute;inset:0;margin:auto}#world{z-index:0}#game{z-index:1}.overlay{z-index:3}.utilities,#touch{z-index:4}#renderNotice{position:absolute;bottom:12px;z-index:5;font:14px system-ui;color:#ffe1a0;text-align:center}.overlay{background:linear-gradient(90deg,rgba(4,13,27,.91),rgba(4,13,27,.42) 53%,transparent)}
 .skip-cinema{position:absolute;right:3%;bottom:9%;z-index:4;font:600 14px system-ui;background:#09172ce8;color:#f4e7bd;border-color:#f4d28c66;padding:11px 16px;box-shadow:0 4px 24px #0008}.skip-cinema span{margin-left:12px;color:#a9c1c4;font-size:12px}.skip-cinema:hover,.skip-cinema:focus-visible{background:#19384a;color:#fff3ca}
 
-/* The title lives inside the opening shot. */
-#cover{background:transparent;padding:5% 9%;transition:opacity 1.1s ease,visibility 1.1s;}
+/* The title stays over the opening shot; the companions retain their camera. */
+@font-face{font-family:Amatic;src:url('fonts/AmaticSC-Bold.ttf') format('truetype');font-style:normal;font-weight:700;font-display:swap}
+#cover{background:transparent;padding:3% 8%;transition:opacity 1.1s ease,visibility 1.1s;isolation:isolate}
 #cover.departing{opacity:0;visibility:hidden;pointer-events:none}
-.menu-content{max-width:650px;transition:transform 1.3s ease}
+.menu-content{width:46%;text-align:center;transition:transform 1.3s ease;position:relative;z-index:1}
 .departing .menu-content{transform:translateY(-18px)}
-#cover .eyebrow{font-size:12px;letter-spacing:.34em;color:#9daaa9}
-#cover h1{font-size:clamp(40px,6.2vw,100px);text-shadow:0 4px 40px #0008}
-#cover h1 em{color:#f7d58c}
-#cover p{font-size:clamp(14px,1.3vw,21px);color:#a5b2b6}
-#start{min-width:190px;text-align:left;border-radius:4px;background:#f4d28c;padding:17px 25px;box-shadow:0 0 45px #f1bf5315;transition:background .25s,box-shadow .25s}
-#start:hover{background:#ffe5aa;box-shadow:0 0 50px #f1bf5333}
-#start span{float:right}
-#cover .controls{font-size:11px;color:#829394;margin-top:30px}
-#cover #pad{font-size:11px;letter-spacing:.08em;color:#697b80;margin-top:10px}
-.menu-caption{position:absolute;bottom:6%;right:8%;font:10px system-ui;letter-spacing:.23em;color:#958b70}
-@media(max-aspect-ratio:1/1){#cover{justify-content:flex-start;padding:8%}#cover h1{font-size:clamp(35px,8vw,65px);margin:14px 0}#cover p{margin-bottom:18px}.menu-caption{bottom:5%;right:8%;font-size:8px}#cover .controls{display:none}.utilities{top:auto;bottom:2%}}
+#cover h1{font-family:Amatic,'Segoe Print',cursive;font-weight:700;font-size:clamp(64px,9.6vw,154px);line-height:.98;letter-spacing:-.025em;color:#4e173c;text-shadow:0 2px 25px #ffe0cf66;margin:0 0 32px}
+#cover h1 span{display:block}#cover h1 span:first-child{transform:rotate(-3deg)}
+#cover h1 .title-small{font-size:.57em;line-height:1.03;transform:rotate(3deg);margin:5px 0}
+#cover h1 span:last-child{transform:rotate(-2deg)}
+#start{min-width:170px;border:1px solid #fff2c9a8;border-radius:999px;background:#ffe4a3;color:#542540;padding:15px 40px;font:600 clamp(16px,1.5vw,22px) system-ui;letter-spacing:.06em;box-shadow:0 8px 28px #5b23452b,inset 0 1px 0 #fff4d2;transition:transform .25s,background .25s,box-shadow .25s}
+#start:hover{background:#fff0bf;transform:translateY(-3px);box-shadow:0 12px 38px #5b234540}
+#start:focus-visible{outline:3px solid #5a2448;outline-offset:6px}
+body:not(.playing) .utilities{display:none}
+.menu-fireflies{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.menu-fireflies i{position:absolute;left:var(--x);top:var(--y);width:4px;height:4px;border-radius:50%;background:#fff9bc;box-shadow:0 0 7px 3px #ffed8b99,0 0 22px 8px #ffdb6433;animation:firefly var(--duration) ease-in-out var(--delay) infinite alternate}
+@keyframes firefly{0%{transform:translate(0,12px);opacity:.15}35%{opacity:.95}65%{opacity:.45}100%{transform:translate(var(--drift),-28px);opacity:.8}}
+.departing .menu-fireflies i{animation-play-state:paused}
+@media(max-aspect-ratio:1/1){#cover{justify-content:flex-start;padding:7% 5%}.menu-content{width:100%}#cover h1{font-size:clamp(55px,12vw,100px);line-height:.88;margin-bottom:20px}#cover h1 .title-small{margin:2px 0}#start{padding:12px 32px;min-width:145px}.menu-fireflies{bottom:45%}}
+@media(prefers-reduced-motion:reduce){.menu-fireflies i{animation:none;opacity:.65}.departing .menu-content{transform:none}}

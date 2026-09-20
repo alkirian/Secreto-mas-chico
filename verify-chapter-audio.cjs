@@ -10,7 +10,8 @@ createBufferSource(){return {connect(){},disconnect(){},stop(){this.stopped=true
 const noop=()=>{},element=id=>elements[id]??={getContext:()=>({}),classList:{add:noop,remove:noop},focus:noop};
 const box={console,Math,Set,Uint8Array,atob,window:{AudioContext:Context},document:{querySelector:element,querySelectorAll:()=>[],body:element('body'),addEventListener:noop},navigator:{},addEventListener:noop,requestAnimationFrame:noop};
 vm.createContext(box);vm.runInContext(fs.readFileSync('dist/number-audio.js','utf8'),box);
-vm.runInContext(fs.readFileSync('dist/game.js','utf8').replace('})();','window.qa={initAudio,beginCounting,updateChapterVoice,skipCinema,pause,reset,collectCount,get voice(){return chapterVoice},get dialog(){return dialog},setup(){mode="play";cinema.stage=null;countValue=5;const v=countLights[5];Object.assign(player,{x:v.x-19,y:v.y-62,ground:true});}};})();'),box);
+assert.equal(Buffer.from(box.window.chapterVoiceData.coopIntro,'base64').byteLength,fs.statSync('sfx/ya me enseñaste a leer tu nombre, y a contar hasta seis.mp3').size);
+vm.runInContext(fs.readFileSync('dist/game.js','utf8').replace('})();','window.qa={initAudio,beginCinema,beginCounting,updateChapterVoice,skipCinema,pause,reset,collectCount,get voice(){return chapterVoice},get dialog(){return dialog},get queued(){return queue.length},setup(){mode="play";cinema.stage=null;countValue=5;const v=countLights[5];Object.assign(player,{x:v.x-19,y:v.y-62,ground:true});}};})();'),box);
 const flush=()=>new Promise(r=>setImmediate(r));
 (async()=>{
 const q=box.window.qa;q.initAudio();q.beginCounting();
@@ -25,6 +26,11 @@ q.updateChapterVoice(1);assert.equal(played.length,six,'six has time to finish')
 assert.equal(played.at(-1).size,fs.statSync('dist/audio/ageReveal.mp3').size);
 context.currentTime+=5.1;q.updateChapterVoice(.01);assert.equal(q.dialog.text,'Las letras guardaban tu nombre');
 const node=played.at(-1).node;q.skipCinema();assert(node.stopped);assert.equal(q.voice,null);
+q.beginCinema('coopIntro',[{text:'Ya me enseñaste a leer tu nombre.',d:6.2},{text:'Y a contar hasta seis.',d:3.57},'Ahora quiero ayudarte yo.','Aunque sea chiquito… algo debo poder hacer.']);
+assert.equal(q.voice.lines.length,2);assert.equal(q.queued,2,'the remaining cooperation dialogue follows the new recording');
+q.updateChapterVoice(1.3);q.updateChapterVoice(.01);await flush();
+assert.equal(played.at(-1).size,fs.statSync('sfx/ya me enseñaste a leer tu nombre, y a contar hasta seis.mp3').size);
+q.skipCinema();
 q.beginCounting();q.reset();assert.equal(q.voice,null,'reset cancels voice and pending playback');
-console.log('PASS: question/reflection sources, subtitle clock, six-before-reflection, pause/resume, skip and reset');
+console.log('PASS: question/reflection/cooperation sources, subtitle clock, queued dialogue, pause/resume, skip and reset');
 })().catch(e=>{console.error(e);process.exitCode=1;});

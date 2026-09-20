@@ -22,7 +22,7 @@ El motor visual está en `src/world3d.js`. Después de cambiarlo, ejecutar `npm 
 - F: pantalla completa.
 - Joystick estándar: palanca/cruceta, botón inferior para saltar, botón izquierdo para acción y Start para pausa.
 
-La pantalla final permanece visible. Reiniciar recargando la página, o desde la pausa durante el juego. Hay sonido sintetizado y ambiente musical; no hay narración grabada.
+La pantalla final permanece visible. Reiniciar recargando la página, o desde la pausa durante el juego. Hay sonido sintetizado, música, viento ambiental y voces grabadas para las escenas y las seis luces numéricas.
 
 Para la reunión: abrir el juego en la computadora conectada por HDMI, conectar el mando antes de empezar y comprobar volumen y pantalla completa. El soporte depende de que el navegador reconozca el mando como gamepad estándar.
 

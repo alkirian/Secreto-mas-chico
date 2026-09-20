@@ -3,3 +3,11 @@ node_modules/
 *.tar.gz
 *.tgz
 *.zip
+.vercel/
+.env
+.env.*
+!.env.example
+.qa/
+/*.mp3
+/*.mp4
+/Transcripciones y ubicacion de audios.txt

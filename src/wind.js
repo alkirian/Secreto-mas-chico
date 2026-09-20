@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 const noise=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);};
 // One travelling gust field for grass, tree crowns and airborne debris.
-export const windGLSL=`float windField(float t,float x){return 0.65+0.35*sin(t*1.15-x*.006);}`;
-export const windStrength=(t,x)=>.65+.35*Math.sin(t*1.15-x*.006);
+export const windGLSL=`float windField(float t,float x){return 0.65+0.35*sin(t*1.15+x*.006);}`;
+export const windStrength=(t,x)=>.65+.35*Math.sin(t*1.15+x*.006);
 const time={value:0};
 const crownGeometry=new THREE.IcosahedronGeometry(1,1);
 const barkGeometry=new THREE.CylinderGeometry(.6,1,1,7);
@@ -17,7 +17,7 @@ foliage.onBeforeCompile=shader=>{
     float worldX=(modelMatrix*leafPosition).x;
     float heightWeight=smoothstep(18.0,90.0,leafPosition.y);
     float gust=windField(forestTime,worldX);
-    leafPosition.x+=heightWeight*(gust*2.5+sin(forestTime*1.5+worldX*.011)*1.1);
+    leafPosition.x-=heightWeight*gust*(2.5+sin(forestTime*1.5+worldX*.011)*1.1);
     leafPosition.y+=heightWeight*sin(forestTime*2.6+worldX*.018)*.65*gust;
     leafPosition.z+=heightWeight*sin(forestTime*1.8+worldX*.013)*.9;
     vec4 mvPosition=modelViewMatrix*leafPosition;
@@ -58,7 +58,7 @@ export function createWind(scene){
   return {update(t,cam){
     time.value=t;
     // Analytic advection avoids frame-rate dependence and jumps after pausing.
-    const travel=t*62-15*Math.cos(t*1.15);
+    const travel=-(t*62-15*Math.cos(t*1.15));
     for(let i=0;i<64;i++){
       const x=wrap(noise(i*3)*2300+travel*(.65+noise(i)*.6),cam),phase=t*1.7+i*2.4;
       dummy.position.set(x,110+noise(i*7)*710+Math.sin(phase*.57)*28+Math.sin(x*.009+t)*12,-150+noise(i*13)*235);
@@ -72,7 +72,7 @@ export function createWind(scene){
       const x=wrap(noise(i*21)*2300+travel*1.4,cam),y=170+noise(i*23)*610,gust=windStrength(t,x);
       for(let j=0;j<10;j++)for(let k=0;k<2;k++){
         const u=(j+k)/10,offset=(i*20+j*2+k)*3;
-        trailPositions.set([x-u*95,y+Math.sin(u*2.5+t*.8+i)*9,-110],offset);
+        trailPositions.set([x+u*95,y+Math.sin(u*2.5+t*.8+i)*9,-110],offset);
         const fade=Math.sin(u*Math.PI)*gust*.65;trailColors.set([fade*.64,fade*.83,fade*.73],offset);
       }
     }

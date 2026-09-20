@@ -45,8 +45,10 @@ export function floatingTerrain(p, shear) {
   const bladePositions=[],bladeColors=[],anchors=[],weights=[];
   const count=Math.ceil(p.w*1.5);
   for(let i=0;i<count;i++){
-    const x=2+random(seed+i*3.13)*Math.max(1,p.w-4),z=-random(seed+i*7.7)*depth;
-    const h=10+random(seed+i*4.6)*19,w=1.1+random(seed+i*8.2)*1.8,lean=(random(seed+i*1.7)-.5)*8;
+    // Keep the grass in front of the character's depth plane so the blades
+    // naturally occlude the lower body while walking through the platform.
+    const x=2+random(seed+i*3.13)*Math.max(1,p.w-4),z=32+random(seed+i*7.7)*12;
+    const h=10+random(seed+i*4.6)*19,w=1.1+random(seed+i*8.2)*1.8,lean=-random(seed+i*1.7)*8;
     const points=[[x-w,0,z],[x+w,0,z],[x+lean+w*.4,h*.55,z],[x-w,0,z],[x+lean+w*.4,h*.55,z],[x+lean-w*.4,h*.55,z],[x+lean-w*.4,h*.55,z],[x+lean+w*.4,h*.55,z],[x+lean*1.6,h,z]];
     const shade=random(seed+i*2.9);
     for(const v of points){bladePositions.push(...v);anchors.push(x,z);weights.push(v[1]/h);color.setHSL(.22+shade*.065,.38+shade*.2,.24+shade*.12+v[1]/h*.13);bladeColors.push(color.r,color.g,color.b);}
@@ -60,7 +62,7 @@ export function floatingTerrain(p, shear) {
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
       float phase=(anchor.x+islandX)*.027+anchor.y*.045;
       float gust=windField(windTime,anchor.x+islandX);
-      float wind=gust*10.0+sin(windTime*2.4+phase)*3.8+sin(windTime*4.2+phase*1.7)*1.8;
+      float wind=-gust*(10.0+sin(windTime*2.4+phase)*3.8+sin(windTime*4.2+phase*1.7)*1.8);
       float dx=anchor.x-heroLocal.x;
       float contact=(1.0-smoothstep(12.0,60.0,abs(dx)))*(1.0-smoothstep(8.0,48.0,abs(heroLocal.y)))*(1.0-smoothstep(22.0,105.0,-anchor.y));
       float bend=weight*weight;
@@ -80,11 +82,46 @@ export function floatingTerrain(p, shear) {
     const cracks=[];for(let i=0;i<Math.ceil(p.w/65);i++){const x=20+i*65;cracks.push(x,-5,1,x+8,-24,1,x+8,-24,1,x+2,-39,-2);}
     land.add(new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(cracks,3)),new THREE.LineBasicMaterial({color:0x30231d})));
   }
-  root.userData.updateTerrain=(t,hero)=>{
+  // Separate wedges of the actual island rise and fit back into its final mesh.
+  const enchanted=!!(p.coopReveal||p.coopStep),original=enchanted?Float32Array.from(vertices):null;
+  const pieces=[];
+  if(enchanted){
+    for(let k=0;k<vertices.length;k+=72)pieces.push({start:k,end:Math.min(k+72,vertices.length),delay:random(seed+k)*.18,angle:(random(seed+k+3)-.5)*1.1,spread:(random(seed+k+7)-.5)*170});
+  }
+  const magicGeometry=enchanted?new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(180),3)):null;
+  const magic=enchanted?new THREE.Points(magicGeometry,new THREE.PointsMaterial({color:0xffdc8a,size:4,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:false})):null;
+  if(magic){magic.frustumCulled=false;root.add(magic);}
+  let lastFormation=-1;
+  root.userData.updateTerrain=(t,hero,orb)=>{
+    if(enchanted){
+      const progress=p.formation??(p.hidden?0:1);
+      if(progress!==lastFormation){
+        const positions=geometry.attributes.position;
+        for(const piece of pieces){
+          const u=THREE.MathUtils.clamp((progress-piece.delay)/(1-piece.delay),0,1),ease=u*u*(3-2*u),rest=1-ease;
+          const angle=piece.angle*rest,cos=Math.cos(angle),sin=Math.sin(angle);
+          for(let k=piece.start;k<piece.end;k+=3){const x=original[k]-p.w/2,y=original[k+1]+height/2;
+            positions.setXYZ(k/3,p.w/2+x*cos-y*sin+piece.spread*rest,-height/2+x*sin+y*cos-(350+random(seed+piece.start)*100)*rest,original[k+2]);}
+        }
+        positions.needsUpdate=true;geometry.computeVertexNormals();earth.frustumCulled=false;
+        for(const child of land.children)if(child!==earth)child.visible=progress>.88;
+        grass.scale.y=THREE.MathUtils.smoothstep(progress,.88,1);
+        lastFormation=progress;
+      }
+      magic.visible=progress>0&&progress<1;
+      if(magic.visible){
+        const positions=magicGeometry.attributes.position;
+        for(let i=0;i<60;i++){
+          const u=(i/60+t*.6)%1,angle=i*2.4+t*3,radius=(1-u)*(p.w*.55)+8;
+          const ox=orb?orb.x-root.position.x:p.w/2,oy=orb?900-orb.y-root.position.y:85;
+          positions.setXYZ(i,THREE.MathUtils.lerp(p.w/2,ox,u)+Math.cos(angle)*radius,THREE.MathUtils.lerp(-350*(1-progress),oy,u),40+Math.sin(angle)*35*(1-u));
+        }positions.needsUpdate=true;magic.material.opacity=Math.sin(progress*Math.PI)*.85;
+      }
+    }
     uniforms.windTime.value=t;uniforms.islandX.value=root.position.x;
     uniforms.heroLocal.value.set(hero.x+19-root.position.x,900-hero.y-62-root.position.y);uniforms.heroSpeed.value=hero.vx;
     for(let i=0;i<moteCount;i++){
-      const x=(random(seed+i*5)*p.w+(t*26-5*Math.cos(t*1.15))*(.7+random(seed+i)*.6))%p.w;
+      const x=((random(seed+i*5)*p.w-(t*26-5*Math.cos(t*1.15))*(.7+random(seed+i)*.6))%p.w+p.w)%p.w;
       const near=Math.max(0,1-Math.abs(x-uniforms.heroLocal.value.x)/60)*Math.max(0,1-Math.abs(uniforms.heroLocal.value.y)/45);
       motePositions.set([x,12+random(seed+i*8)*25+Math.sin(t*1.8+i)*8+near*Math.min(18,Math.abs(hero.vx)*.06),-random(seed+i*3)*depth],i*3);
     }

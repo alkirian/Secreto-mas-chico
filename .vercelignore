@@ -1,0 +1,10 @@
+.git
+.qa
+node_modules
+/*.mp3
+/*.mp4
+/*.zip
+/*.tar.gz
+/*.tgz
+Transcripciones y ubicacion de audios.txt
+.openai
