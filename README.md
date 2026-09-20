@@ -9,7 +9,7 @@ Requiere Node.js 22 o posterior.
 ```sh
 npm ci
 npm run build
-npm test
+npm run test:3d
 npm start
 ```
 
@@ -17,7 +17,7 @@ Abrir http://127.0.0.1:4187. También se puede abrir `dist/index.html` directame
 
 `src/` contiene el renderizador 3D y el reproductor de voces. `dist/game.js`, `dist/index.html` y `dist/style.css` son archivos fuente del juego: no borrar `dist/` antes de compilar. La compilación actualiza `dist/world3d.js`, empaqueta las voces en `dist/number-audio.js` y copia música y viento desde `sfx/`.
 
-`npm test` ejecuta todas las verificaciones de mecánicas, recorridos, menú, cinemáticas y audio. El build falla si falta un recurso, su nombre no coincide en mayúsculas/minúsculas o las voces empaquetadas no corresponden a sus originales.
+`npm run test:3d` ejecuta las verificaciones de la versión 3D y los sistemas compartidos: mecánicas, recorridos, menú, cinemáticas y audio. Es la validación usada para publicar en Vercel. `npm test` incluye además la vista 2D opcional, fuera del alcance de esta publicación. El build falla si falta un recurso, su nombre no coincide en mayúsculas/minúsculas o las voces empaquetadas no corresponden a sus originales.
 
 ## Publicación en Vercel
 
@@ -27,8 +27,8 @@ Las voces de introducción y nombre están en `dist/audio-intro.mp3` y `dist/aud
 
 ## Controles
 
-- Flechas o A/D: moverse; espacio, W o flecha arriba: salto y doble salto.
-- E: interactuar, agarrarse a sogas y activar las luces.
+- Flechas o A/D: moverse; espacio, W o flecha arriba: saltar. Volver a pulsar en el aire para el doble salto.
+- Enter: interactuar y activar la palanca (E también funciona). Las luces numéricas se encienden al tocarlas.
 - Escape: pausa; F: pantalla completa.
 - Mando: palanca/cruceta, botón inferior para saltar, izquierdo para acción y Start para pausa.
 - Sonido: se inicia al pulsar **Jugar**, según las restricciones de reproducción del navegador.

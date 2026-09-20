@@ -24,11 +24,11 @@ assert.equal(box.window.numberVoiceData.length, 6);
 for (let n = 1; n <= 6; n++) {
   assert(Buffer.from(box.window.numberVoiceData[n - 1], 'base64').equals(fs.readFileSync(path.join(__dirname, 'sfx', `${n}.mp3`))), `Wrong voice for ${n}`);
 }
-const chapters = { ageIntro: 'dist/audio/ageIntro.mp3', ageReveal: 'dist/audio/ageReveal.mp3', coopIntro: 'sfx/coop-intro.mp3' };
+const chapters = { ageIntro: 'dist/audio/ageIntro.mp3', ageReveal: 'dist/audio/ageReveal.mp3', coopIntro: 'sfx/coop-intro.mp3', final: 'sfx/final-dialog.mp3' };
 for (const [name, file] of Object.entries(chapters)) {
   assert(Buffer.from(box.window.chapterVoiceData[name], 'base64').equals(fs.readFileSync(path.join(__dirname, file))), `Wrong chapter voice: ${name}`);
 }
 for (const file of ['Banda.mp3', 'Wind.mp3']) {
   assert(fs.readFileSync(path.join(root, file)).equals(fs.readFileSync(path.join(__dirname, 'sfx', file))), `Outdated background audio: ${file}`);
 }
-console.log('PASS: production asset paths/case, fonts/licenses, six number voices, three chapter voices, music and wind');
+console.log('PASS: production asset paths/case, fonts/licenses, six number voices, four chapter voices, music and wind');

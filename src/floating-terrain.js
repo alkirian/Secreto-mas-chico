@@ -33,6 +33,11 @@ export function floatingTerrain(p, shear) {
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geometry.computeVertexNormals();
   const earth=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,side:THREE.DoubleSide}));earth.castShadow=true;earth.receiveShadow=true;land.add(earth);
 
+  // The landing edge follows the collider and stays legible through the forest veil.
+  // Its own layer is drawn only during darkness, without lighting the whole island.
+  const landingEdge=new THREE.Mesh(new THREE.PlaneGeometry(p.w,5),new THREE.MeshBasicMaterial({color:0xd3dfad,transparent:true,opacity:0,depthWrite:false,toneMapped:false}));
+  landingEdge.name='landing-edge';landingEdge.position.set(p.w/2,-2.5,2);landingEdge.layers.set(2);landingEdge.visible=false;root.add(landingEdge);
+
   // Thin branching roots merge into a single draw call.
   const roots=[];
   for(let i=0;i<Math.ceil(p.w/85);i++){
@@ -92,7 +97,10 @@ export function floatingTerrain(p, shear) {
   const magic=enchanted?new THREE.Points(magicGeometry,new THREE.PointsMaterial({color:0xffdc8a,size:4,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:false})):null;
   if(magic){magic.frustumCulled=false;root.add(magic);}
   let lastFormation=-1;
-  root.userData.updateTerrain=(t,hero,orb,low=false)=>{
+  root.userData.updateTerrain=(t,hero,orb,low=false,darkness=0)=>{
+    const formed=!p.hidden&&!p.retired&&!p.falling&&(!enchanted||(p.formation??1)>=1);
+    landingEdge.visible=formed&&darkness>.001;
+    landingEdge.material.opacity=darkness*.8;
     if(enchanted){
       const progress=p.formation??(p.hidden?0:1);
       if(progress!==lastFormation){

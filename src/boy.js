@@ -163,7 +163,7 @@ export function createBoy(){
     if(reset){wasGround=ground;landing=0;air=ground?0:1;}
     if(ground&&!wasGround)landing=1;wasGround=ground;landing*=Math.exp(-11*dt);
     run=damp(run,ground&&!p.rope?clamp(speed/320,0,1):0,9);
-    air=damp(air,!ground&&!p.rope&&!floatWeight?1:0,13);
+    air=damp(air,!ground&&!p.rope&&!p.vine&&!floatWeight?1:0,13);
     phase+=dt*speed*.062;
     lookWeight=damp(lookWeight,cinematic?1:0,6);
     const floatHeight=(37+Math.sin(floatTime*1.45)*5+Math.sin(floatTime*.73)*2)*floatWeight;
@@ -173,12 +173,13 @@ export function createBoy(){
     root.scale.set(1+squash,1-squash,1+squash*.4);
     root.rotation.z=(Math.sin(floatTime*.95)*.028-.015)*floatWeight;
     target.set(o.x,900-o.y,o.z??55);
+    const farewell=s.mode==='end'?clamp((s.ending||0)/3.5,0,1):0;
     const facing=(p.face||1)*1.12,orbYaw=Math.atan2(target.x-root.position.x,target.z-root.position.z);
-    const desiredYaw=facing+wrap(orbYaw-facing)*lookWeight;
+    const desiredYaw=p.vine?Math.PI:lerp(facing+wrap(orbYaw-facing)*lookWeight,.22,farewell);
     root.rotation.y=reset?desiredYaw:turn(root.rotation.y,desiredYaw,cinematic?5:11);
     const bounce=(.9-Math.cos(phase*2)*.9)*run;
     hips.position.y=28+bounce-landing*2.1+Math.sin(t*2)*.22*(1-run);
-    torso.rotation.x=damp(torso.rotation.x,.13*run-.09*air+.018*Math.sin(t*2));
+    torso.rotation.x=damp(torso.rotation.x,lerp(.13*run-.09*air,.17,floatWeight)+.018*Math.sin(t*2));
     torso.rotation.z=damp(torso.rotation.z,Math.sin(phase)*.045*run);
     torso.rotation.y=damp(torso.rotation.y,Math.sin(phase)*.075*run);
 
@@ -189,17 +190,19 @@ export function createBoy(){
       const rising=clamp(-(p.vy||0)/500,0,1),falling=clamp((p.vy||0)/650,0,1);
       hip=lerp(hip,i===0?-.55-.3*rising:.18+.24*falling,air);
       fold=lerp(fold,i===0?.65+.35*rising:.9-.65*falling,air);foot=lerp(foot,-.2,air);
-      hip=lerp(hip,i===0?-.16:.12,floatWeight);fold=lerp(fold,.18,floatWeight);
+      hip=lerp(hip,(i===0?-.38:-.23)+Math.sin(floatTime*.9+i)*.04,floatWeight);fold=lerp(fold,(i===0?.72:.55)+Math.sin(floatTime*1.1+i)*.05,floatWeight);foot=lerp(foot,-.23,floatWeight);
       if(p.rope){hip=i===0?-.6:.12;fold=i===0?1:.45;foot=-.1;}
+      if(p.vine){const climb=Math.sin(p.y*.075+i*Math.PI);hip=-.55-climb*.35;fold=.9+climb*.4;foot=-.2;}
       thigh.rotation.x=damp(thigh.rotation.x,hip,18);knee.rotation.x=damp(knee.rotation.x,fold,18);ankle.rotation.x=damp(ankle.rotation.x,foot,18);
     });
     arms.forEach(({shoulder,elbow,hand},i)=>{
       const side=i===0?-1:1,a=phase+i*Math.PI;
       let swing=Math.sin(a)*.65*run-.04,bend=-.2-.7*run,spread=side*(.07+air*.22);
       swing=lerp(swing,-.55+clamp((p.vy||0)/800,-.4,.5),air);bend=lerp(bend,-.65,air);
-      swing=lerp(swing,-.1+Math.sin(floatTime*1.2+i)*.035,floatWeight);spread+=side*.1*floatWeight;
+      swing=lerp(swing,-.1+Math.sin(floatTime*1.2+i)*.035,floatWeight);bend=lerp(bend,-.38,floatWeight);spread+=side*.1*floatWeight;
       if(p.rope){swing=-2.8;spread=side*.12;bend=-.2;}
       if(p.wall&&!ground&&!p.rope){swing=-1.35;bend=-.45;}
+      if(p.vine){swing=-2.3+Math.sin(p.y*.075+i*Math.PI)*.4;bend=-.55;spread=side*.18;}
       shoulder.rotation.x=damp(shoulder.rotation.x,swing);shoulder.rotation.z=damp(shoulder.rotation.z,spread);elbow.rotation.x=damp(elbow.rotation.x,bend);hand.rotation.z=Math.sin(t*2+i)*.035;
     });
     // Resolve the orb in the neck parent's coordinates, including depth and body
@@ -207,7 +210,7 @@ export function createBoy(){
     root.updateMatrixWorld(true);localTarget.copy(target);torso.worldToLocal(localTarget);localTarget.sub(head.position);
     const headYaw=clamp(Math.atan2(localTarget.x,localTarget.z),-.95,.95)*lookWeight;
     const headPitch=clamp(-Math.atan2(localTarget.y-13,Math.hypot(localTarget.x,localTarget.z)),-.65,.55)*lookWeight;
-    head.rotation.y=turn(head.rotation.y,headYaw,14);head.rotation.x=damp(head.rotation.x,headPitch-.035*run,12);head.rotation.z=damp(head.rotation.z,Math.sin(t*1.8)*.018*(1-run),8);
+    head.rotation.y=turn(head.rotation.y,headYaw*(1-farewell),8);head.rotation.x=damp(head.rotation.x,lerp(headPitch-.035*run,-.08,farewell),8);head.rotation.z=damp(head.rotation.z,Math.sin(t*1.8)*.018*(1-run),8);
     const blinkPhase=t%4.7,blink=Math.max(0,1-Math.abs(blinkPhase-4.35)/.1);
     for(const {eye} of eyes)eye.material=eyeFrames[blink>.8?2:blink>.3?1:0];
     mouth.material=s.speaker==='VOS'&&Math.sin(t*13)>-.2?talkingMouth:smile;

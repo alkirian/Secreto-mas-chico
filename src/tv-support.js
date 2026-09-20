@@ -3,59 +3,17 @@
   const nativeTV = new URLSearchParams(location.search).get('androidtv') === '1';
   const tv = nativeTV || /smart.?tv|tizen|web0s|webos|netcast|hbbtv|viera|bravia/i.test(navigator.userAgent || '');
   const mobile = !tv && (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent || '')));
-  const valid = ['auto', 'high', 'balanced', 'low', '2d'];
-  let preference = nativeTV ? '2d' : 'auto';
-  try { preference = new URLSearchParams(location.search).get('quality') || (nativeTV ? '2d' : localStorage.getItem('secret-quality')) || 'auto'; } catch {}
-  if (!valid.includes(preference)) preference = 'auto';
-  const automatic = () => tv ? 'low' : mobile ? 'balanced' : 'high';
-  let quality = preference === 'auto' ? automatic() : preference;
-  let resolution = .8;
-  let frames = 0, duration = 0, slowWindows = 0, warmup = nativeTV ? 5000 : 0;
-  const listeners = [];
-  function refresh() {
-    document.querySelectorAll('.quality-select').forEach(el => { el.value = preference; });
-    document.querySelectorAll('.quality-status').forEach(el => { el.textContent = quality === 'balanced' ? '3D móvil: conserva el escenario y ajusta la resolución para jugar fluido.' : quality === 'low' ? 'Modo liviano: menos efectos y menor resolución.' : quality === '2d' ? 'Modo 2D: máxima fluidez.' : '3D detallado: máxima calidad de imagen.'; });
-    listeners.forEach(fn => fn(quality));
-  }
+  // Detailed graphics are fixed on every device, including older saved settings.
   window.secretDisplay = {
-    get quality() { return quality; },
-    get preference() { return preference; },
+    get quality() { return 'high'; },
+    get preference() { return 'high'; },
     get mobile() { return mobile; },
-    get resolution() { return quality === 'balanced' ? resolution : quality === 'low' ? .5 : 1; },
-    frameInterval() { return nativeTV && quality === '2d' ? 1000 / 30 : 0; },
-    subscribe(fn) { listeners.push(fn); fn(quality); },
-    set(value) {
-      if (!valid.includes(value)) return;
-      preference = value; quality = value === 'auto' ? automatic() : value; resolution = .8;
-      frames = duration = slowWindows = 0;
-      warmup = nativeTV ? 5000 : 0;
-      try { localStorage.setItem('secret-quality', value); } catch {}
-      refresh();
-    },
-    sample(ms) {
-      if (preference !== 'auto' || quality === '2d' || document.hidden || !(ms > 0 && ms < 1000)) return;
-      if (warmup > 0) { warmup -= ms; return; }
-      duration += ms; frames++;
-      if (frames >= 90) {
-        if (quality === 'balanced') {
-          slowWindows = duration / frames > 25 ? slowWindows + 1 : 0;
-          if (slowWindows >= 2) {
-            if (resolution > .6) resolution = Math.max(.6, Math.round((resolution - .1) * 10) / 10);
-            else quality = 'low';
-            slowWindows = 0; refresh();
-          }
-        }
-        else if (quality === 'high' && duration / frames > 25) { quality = 'low'; refresh(); }
-        else if (nativeTV && quality === 'low') {
-          slowWindows = duration / frames > 40 ? slowWindows + 1 : 0;
-          if (slowWindows >= 2) { quality = '2d'; refresh(); }
-        }
-        frames = duration = 0;
-      }
-    }
+    get resolution() { return 1; },
+    frameInterval() { return 0; },
+    subscribe(fn) { fn('high'); },
+    set() {},
+    sample() {}
   };
-  document.querySelectorAll('.quality-select').forEach(el => { el.onchange = () => window.secretDisplay.set(el.value); });
-  refresh();
 
   let selected = null, lastText = '';
   const down = b => typeof b === 'number' ? b > .5 : !!(b && (b.pressed || b.value > .5));
@@ -68,7 +26,7 @@
   window.secretControls = {
     read() {
       if (nativeTV) {
-        status('A: aceptar/saltar · X/B: acción/reiniciar · Start/Back: pausa · Y: gráficos · L1: sonido');
+        status('↕ Menús · A: aceptar/saltar · B: volver · X: acción · Start: pausa · L1: sonido');
         return { connected: false }; // Android supplies keyboard events directly.
       }
       const get = navigator.getGamepads || navigator.webkitGetGamepads;
@@ -86,8 +44,8 @@
       const axis = Number.isFinite(a[0]) && Math.abs(a[0]) > .2 ? a[0] : 0;
       // Some USB controllers expose the D-pad as axes 6/7 instead of buttons.
       const dpad = gp.mapping !== 'standard' && a.length >= 8 && Math.abs(a[6]) <= 1 && Math.abs(a[6]) > .5 ? Math.sign(a[6]) : 0;
-      status('Joystick conectado: ' + (gp.id || 'mando') + ' · A: aceptar/saltar · X/B: acción · Start: pausa · Y: gráficos · L1: sonido');
-      return { connected: true, axis: Math.max(-1, Math.min(1, axis + dpad + (down(b[15]) ? 1 : 0) - (down(b[14]) ? 1 : 0))), jump: down(b[0]), action: down(b[2]) || down(b[1]), pause: down(b[9]) || down(b[8]), sound: down(b[4]), graphics: down(b[3]) };
+      status('Joystick conectado: ' + (gp.id || 'mando') + ' · A: aceptar/saltar · X/B: acción · Start: pausa · L1: sonido');
+      return { connected: true, axis: Math.max(-1, Math.min(1, axis + dpad + (down(b[15]) ? 1 : 0) - (down(b[14]) ? 1 : 0))), vertical: Math.max(-1,Math.min(1,(Math.abs(a[1]||0)>.5?a[1]:0)+(gp.mapping!=='standard'&&a.length>=8&&Math.abs(a[7])<=1&&Math.abs(a[7])>.5?Math.sign(a[7]):0)+(down(b[13])?1:0)-(down(b[12])?1:0))), back: down(b[1]), confirm: down(b[2]), jump: down(b[0]), action: down(b[2]) || down(b[1]), pause: down(b[9]) || down(b[8]), sound: down(b[4]), graphics: false };
     }
   };
   window.secretControls.read();

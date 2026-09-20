@@ -34,12 +34,9 @@ function pointer(button, type, id) { const event = new Event(type, { cancelable:
   const box = { window: {}, navigator: { userAgent: 'Mozilla Android Mobile', getGamepads: () => [] }, location: { search: '' }, URLSearchParams, localStorage: { getItem: () => null, setItem() {} }, document: { hidden: false, querySelectorAll: () => [] } };
   vm.runInNewContext(fs.readFileSync('src/tv-support.js', 'utf8'), box);
   const display = box.window.secretDisplay;
-  assert.equal(display.quality, 'balanced'); assert.equal(display.resolution, .8);
-  for (let i = 0; i < 180; i++) display.sample(34);
-  assert.equal(display.quality, 'balanced'); assert.equal(display.resolution, .7, 'resolution reduced before removing 3D details');
-  for (let i = 0; i < 360; i++) display.sample(34);
-  assert.equal(display.quality, 'low', 'sustained poor performance remains 3D');
-  display.set('high'); for (let i = 0; i < 540; i++) display.sample(50);
-  assert.equal(display.quality, 'high', 'manual detailed mode remains locked for mirroring');
-  console.log('PASS: simultaneous touch, multiple pointers, cancellation, lost capture, pause/resume, wake lock, fullscreen fallback, mobile adaptive 3D and explicit high quality');
+  assert.equal(display.quality, 'high'); assert.equal(display.resolution, 1);
+  display.set('low');
+  for (let i = 0; i < 540; i++) display.sample(50);
+  assert.equal(display.quality, 'high', 'mobile keeps detailed graphics');
+  console.log('PASS: simultaneous touch, multiple pointers, cancellation, lost capture, pause/resume, wake lock, fullscreen fallback, fixed detailed mobile graphics');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -28,9 +28,12 @@ export function createLifeOrb(map){
   const smile=sprite(face,0xffffff,9,.9,smileMap,false);smile.position.set(0,-5,23);
   const blush=[-1,1].map(side=>{const cheek=sprite(face,0xff967d,14,.48,map,false);cheek.position.set(side*10,-4,21);return cheek;});
   const sparks=Array.from({length:9},()=>sprite(root,0xffe2a0,6,.6));
+  // A soft pool of light and drifting motes make the guide readable in the forest.
+  const guideGlow=sprite(lightBody,0xffcb70,370,0);guideGlow.position.z=-12;
+  const magicMotes=Array.from({length:24},(_,i)=>sprite(root,i%3?0xffdc87:0xfff6d5,5,0));
   const light=new THREE.PointLight(0xffce75,13000,280,1.6);root.add(light);
   let lastTime,tilt=0,tiltVelocity=0;
-  return {root,update(t,orb,player,speaker){
+  return {root,update(t,orb,player,speaker,guide=0){
     const elapsed=lastTime===undefined?0:t-lastTime,dt=Math.max(0,Math.min(elapsed,.05));lastTime=t;
     if(elapsed<0||elapsed>.25){tilt=0;tiltVelocity=0;}
     const gust=windStrength(t,orb.x),vx=orb.vx||0,vy=orb.vy||0,speed=Math.min(Math.hypot(vx,vy)/320,1);
@@ -60,6 +63,17 @@ export function createLifeOrb(map){
     const magic=orb.magic||0;
     halo.scale.multiplyScalar(1+magic*.4);halo.material.opacity+=magic*.2;
     wisps.forEach((w,i)=>{if(magic)w.position.set(Math.cos(t*4+i*1.26)*32,Math.sin(t*4+i*1.26)*25,-2-i);});
-    light.intensity=13000*(1+Math.sin(t*2.4)*.06+magic*.7);
+    const breathe=1+Math.sin(t*1.8)*.045;
+    guideGlow.scale.setScalar((370+guide*95)*breathe);guideGlow.material.opacity=guide*.23;
+    halo.scale.multiplyScalar(1+guide*.45);halo.material.opacity+=guide*.12;
+    magicMotes.forEach((mote,i)=>{
+      const age=(t*(.13+(i%3)*.015)+i/24)%1,angle=i*2.399+t*.22;
+      const radius=35+age*100;
+      mote.position.set(Math.cos(angle)*radius-vx*age*.16,Math.sin(angle)*radius*.45+age*75-28+vy*age*.1,-8+Math.sin(angle)*18);
+      mote.material.opacity=guide*Math.sin(age*Math.PI)*(.45+.25*Math.sin(t*3+i)**2);
+      mote.scale.setScalar(3+Math.sin(age*Math.PI)*4);
+    });
+    light.distance=280+guide*300;
+    light.intensity=13000*(1+Math.sin(t*2.4)*.06+magic*.7+guide*3.8);
   }};
 }

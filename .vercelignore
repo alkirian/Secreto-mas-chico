@@ -1,6 +1,9 @@
 .git
 .qa
 node_modules
+android
+.android-tools
+apk
 /*.mp3
 /*.mp4
 /*.zip

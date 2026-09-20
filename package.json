@@ -5,6 +5,7 @@
   "scripts": {
     "build": "node build.cjs",
     "test": "node verify-all.cjs",
+    "test:3d": "node verify-all.cjs --3d",
     "start": "node server.cjs",
     "test:assets": "node verify-assets.cjs"
   },
