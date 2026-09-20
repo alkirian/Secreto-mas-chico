@@ -5,7 +5,10 @@ Juego web 2D para teclado y joystick. No necesita instalación ni conexión para
 ## Controles
 
 - Flechas o A/D: moverse.
-- Espacio, W o flecha arriba: saltar. Mantener para ganar altura.
+- Espacio, W o flecha arriba: saltar. Mantener para ganar altura; pulsar otra vez en el aire para el doble salto.
+- Contra una pared marcada: saltar para impulsarse y volver a la pared para seguir trepando. La caída junto a la pared es más lenta.
+- E / botón izquierdo del mando junto al extremo de una soga: agarrarse. Izquierda/derecha para balancearse y salto para soltarse. Se puede hacer doble salto después de soltarse.
+- Saltar sobre un enemigo lo derrota y produce un rebote. El contacto lateral devuelve al checkpoint, sin vidas ni Game Over.
 - E: activar mecanismos y elegir la placa numérica sobre la que está el personaje.
 - Escape: pausa.
 - F: pantalla completa.
@@ -17,4 +20,4 @@ Para la reunión: abrir el juego en la computadora conectada por HDMI, conectar 
 
 ## Verificación
 
-`node verify.cjs` verifica física básica, reaparición, respuesta incorrecta/correcta, interruptor, diálogo de calma, final y reinicio con un entorno simulado. No reemplaza una prueba con un mando físico.
+`node verify.cjs` verifica doble salto, límite de saltos, paredes, sogas, enemigos, checkpoints, acertijo, narrativa y reinicio. También simula 17 trayectorias de salto, dos escaladas completas y los dos cruces de soga. No reemplaza una prueba con un mando físico. El recorrido ampliado tiene dos torres, dos sogas y nueve enemigos.
