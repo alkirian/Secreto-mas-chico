@@ -3,11 +3,12 @@ const canvas=document.querySelector('#game'),c=canvas.getContext('2d'),W=1600,H=
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 let mode='title',t=0,cam=0,last=0,acc=0,muted=false,audio,introAudio=null,musicAudio=null,beat=0,prevJump=false,prevAction=false,prevPause=false,buffer=0,coyote=0,shake=0,ending=0,dialog=null,queue=[],flags={},particles=[],platforms=[],checkpoint={x:180,y:660},padActive=false;
 let walls=[],ropes=[],enemies=[],letters=[],lettersComplete=false,letterBanner=0,hint='',hintTime=0;
-let entrance=1;
+let entrance=1,questActive=true,doorTime=0,doorPassed=false;
+const QUEST_DOOR=6070;
 let cinema={stage:null,blend:0,time:0,closing:false},orbPhase=0;
 let player={x:180,y:660,vx:0,vy:0,w:38,h:62,ground:false,face:1,squash:0},orb={x:340,y:560,vx:0,vy:0},gate=false,switchOn=false,bridge=false,finalBridge=false,selection=1,wrong=0;
 function rect(x,y,w,h,kind='stone',extra={}){platforms.push({x,y,w,h,kind,...extra});}
-function level(){platforms=[];walls=[];ropes=[];enemies=[];letters=[];lettersComplete=false;letterBanner=0;rect(-500,730,1350,400);rect(1010,700,380,400);rect(1510,640,270,450);rect(1910,690,500,400);rect(2460,600,220,38,'moving',{baseY:600,amp:55,speed:1.1});rect(2800,690,1070,500);rect(3890,710,460,450);rect(4410,610,200,32);rect(4690,510,210,32);rect(4950,410,300,32);rect(4380,770,1200,300);rect(5310,640,220,32);rect(5580,710,1070,400);
+function level(first=true){questActive=first;doorTime=0;doorPassed=false;platforms=[];walls=[];ropes=[];enemies=[];letters=[];lettersComplete=false;letterBanner=0;rect(-500,730,1350,400);rect(1010,700,380,400);rect(1510,640,270,450);rect(1910,690,500,400);rect(2460,600,220,38,'moving',{baseY:600,amp:55,speed:1.1});rect(2800,690,1070,500);rect(3890,710,460,450);rect(4410,610,200,32);rect(4690,510,210,32);rect(4950,410,300,32);rect(4380,770,1200,300);rect(5310,640,220,32);rect(5580,710,1070,400);
 // Every elevated ledge belongs to a traversable upper route.
 rect(1160,530,170,28);rect(1420,415,180,28);rect(1700,430,160,28);rect(1940,510,170,28);
 letter('C',640,670);letter('O',1220,466);letter('T',1480,351);letter('I',1760,366);
@@ -21,6 +22,34 @@ rect(13420,540,250,360);rect(13830,650,3400,400);
 enemy(1120,700,1035,1330);enemy(1990,690,1940,2350);enemy(4220,710,3950,4310);
 enemy(4600,770,4440,4860);enemy(8260,465,8210,8390);enemy(9200,570,9130,9460);
 enemy(11680,390,11620,11810);enemy(12760,540,12720,12860);enemy(13500,540,13440,13600);
+if(first)buildLetterQuest();
+}
+function buildLetterQuest(){
+platforms=[];walls=[];ropes=[];enemies=[];letters=[];
+rect(-500,730,1200,400);wall(500,630,65,100);rect(840,670,200,400);rect(1170,620,360,450);
+letter('C',1350,558);
+rect(1530,730,480,400);wall(1650,180,70,390);wall(1920,180,70,550);
+rect(2180,260,180,32);rect(2490,350,180,32);rect(2790,410,340,400);letter('O',2950,348);
+for(const [x,y] of [[3290,430],[3590,470],[3890,410],[4190,490]])rect(x,y,160,28,'crumble',{baseY:y,age:0,falling:false,recover:0});
+rect(4490,620,570,420);letter('T',4600,558);
+rect(5060,620,1500,440);wall(5160,500,70,120);wall(5490,455,80,165);wall(5820,510,70,110);
+letter('I',6300,558);enemy(920,670,855,990);
+}
+function leaveLetterQuest(){const name=letters;level(false);letters=name;lettersComplete=true;checkpoint={x:1950,y:628};Object.assign(player,{x:1950,y:628,vx:0,vy:0,on:null,ground:false});cam=1380;orb.x=2060;orb.y=600;orb.vx=orb.vy=0;}
+function updateQuest(dt,I){
+doorTime=Math.max(0,doorTime-dt);
+for(const p of platforms.filter(p=>p.kind==='crumble')){
+if(p.falling){p.recover+=dt;p.y+=650*dt;if(p.recover>3){p.y=p.baseY;p.age=0;p.falling=false;p.recover=0;}}
+else if(p.age>0){p.age+=dt;if(p.age>.65){p.falling=true;burst(p.x+p.w/2,p.y,'#e8b376',12);}}
+}
+if(player.ground&&player.x>4740&&player.x<4920&&I.act){doorTime=7.5;showHint('¡La puerta está abierta! Tenés 7,5 segundos.');tone(830,.2);}
+if(player.x>QUEST_DOOR+65&&doorTime>0)doorPassed=true;
+if(!doorPassed&&doorTime===0&&player.x+38>QUEST_DOOR)player.x=QUEST_DOOR-38;
+for(const spot of [{id:'qC',x:1250,y:558,end:1500},{id:'qO',x:2850,y:348,end:3070},{id:'qT',x:4510,y:558,end:4800}])event(spot.id,player.ground&&player.x>=spot.x&&player.x<spot.end&&Math.abs(player.y-spot.y)<8,()=>{checkpoint={x:spot.x,y:spot.y};});
+event('qWalls',player.x>1500,()=>showHint('Entrá por debajo · Saltá de una pared a la otra'));
+event('qFragile',player.x>2850,()=>showHint('Las plataformas doradas caen al pisarlas. ¡Seguí saltando!'));
+event('qButton',player.x>4670,()=>showHint('E / Ⓧ sobre el botón · Abrí la puerta y corré'));
+if(lettersComplete&&player.x>6460&&!dialog&&!queue.length)leaveLetterQuest();
 }
 function wall(x,y,w,h){const p={x,y,w,h,kind:'wall',solid:true};walls.push(p);platforms.push(p);}
 function rope(x,y,len){ropes.push({x,y,len,angle:-.45,speed:0,tipX:x-Math.sin(.45)*len,tipY:y+Math.cos(.45)*len});}
@@ -32,7 +61,7 @@ function respawn(){burst(player.x+19,Math.min(player.y,850),'#b3dce1',20);Object
 function collectLetters(){
 const p=player;
 for(const item of letters){
-if(item.collected||p.x+p.w<item.x-30||p.x>item.x+30||p.y+p.h<item.y-32||p.y>item.y+32)continue;
+if((item.char==='I'&&questActive&&!doorPassed)||item.collected||p.x+p.w<item.x-30||p.x>item.x+30||p.y+p.h<item.y-32||p.y>item.y+32)continue;
 item.collected=true;burst(item.x,item.y,'#ffdc77',28);tone(790,.16,'sine',.055);showHint(`Encontraste la ${item.char}`);
 if(!flags.firstLetter){flags.firstLetter=true;say(['¿Una letra?']);}
 }
@@ -44,6 +73,7 @@ say([{text:'C… O… T… I…',d:2.4},{text:'Coti.',d:2.5},{text:'¿Ese es tu 
 function stepPhysics(dt,I,locked){
 const p=player;hintTime=Math.max(0,hintTime-dt);p.invincible=Math.max(0,(p.invincible||0)-dt);p.ropeCooldown=Math.max(0,(p.ropeCooldown||0)-dt);p.wallLock=Math.max(0,(p.wallLock||0)-dt);
 const axis=locked?0:I.axis;
+if(questActive)updateQuest(dt,locked?{act:false}:I);
 for(const r of ropes){r.speed+=(-2.2*Math.sin(r.angle)+(p.rope===r?axis*2.6:0))*dt;r.speed*=Math.exp(-.12*dt);r.angle=clamp(r.angle+r.speed*dt,-1.02,1.02);r.tipX=r.x+Math.sin(r.angle)*r.len;r.tipY=r.y+Math.cos(r.angle)*r.len;}
 if(I.jp)buffer=.14;else buffer-=dt;coyote=p.ground?.12:coyote-dt;
 if(p.ground)p.airJump=true;
@@ -61,10 +91,10 @@ const oldX=p.x,oldY=p.y;p.x=clamp(p.x+p.vx*dt,20,16900);p.wall=0;
 for(const w of walls){if(p.y+p.h>w.y+3&&p.y<w.y+w.h-3){if(oldX+p.w<=w.x+4&&p.x+p.w>=w.x){p.x=w.x-p.w;p.wall=1;p.vx=0;}else if(oldX>=w.x+w.w-4&&p.x<=w.x+w.w){p.x=w.x+w.w;p.wall=-1;p.vx=0;}}}
 if(p.wall&&p.vy>120){p.vy=120;if(Math.random()<dt*18)burst(p.x+(p.wall>0?38:0),p.y+40,'#79b6b2',1);}
 p.y+=p.vy*dt;p.ground=false;p.on=null;
-for(const plat of platforms){if(p.x+p.w<=plat.x||p.x>=plat.x+plat.w)continue;
-if(p.vy>=0&&oldY+p.h<=plat.y+5&&p.y+p.h>=plat.y){if(p.vy>180){p.squash=.22;burst(p.x+19,plat.y,'#80bdbb',7);tone(110,.08,'triangle',.025);}p.y=plat.y-p.h;p.vy=0;p.ground=true;p.on=plat;p.airJump=true;}
+for(const plat of platforms){if(plat.falling)continue;if(p.x+p.w<=plat.x||p.x>=plat.x+plat.w)continue;
+if(p.vy>=0&&oldY+p.h<=plat.y+5&&p.y+p.h>=plat.y){if(p.vy>180){p.squash=.22;burst(p.x+19,plat.y,'#80bdbb',7);tone(110,.08,'triangle',.025);}p.y=plat.y-p.h;p.vy=0;p.ground=true;p.on=plat;p.airJump=true;if(plat.kind==='crumble'&&plat.age===0)plat.age=.001;}
 else if(plat.solid&&p.vy<0&&oldY>=plat.y+plat.h&&p.y<plat.y+plat.h){p.y=plat.y+plat.h;p.vy=0;}}
-if(!lettersComplete&&p.x+38>1855&&p.x<1910)p.x=1817;if(!gate&&p.x+38>3745&&p.x<3830)p.x=3707;if(!switchOn&&p.x+38>5520&&p.x<5580)p.x=5482;
+if(questActive&&!doorPassed&&doorTime===0&&p.x+38>QUEST_DOOR)p.x=QUEST_DOOR-38;if(!questActive&&!gate&&p.x+38>3745&&p.x<3830)p.x=3707;if(!questActive&&!switchOn&&p.x+38>5520&&p.x<5580)p.x=5482;
 for(const e of enemies){if(!e.alive)continue;e.x+=e.dir*e.speed*dt;if(e.x<e.min||e.x>e.max){e.x=clamp(e.x,e.min,e.max);e.dir*=-1;}
 if(p.x+p.w>e.x&&p.x<e.x+e.w&&p.y+p.h>e.y&&p.y<e.y+e.h){
 if(p.vy>0&&oldY+p.h<=e.y+14){e.alive=false;p.y=e.y-p.h;p.vy=I.jump?-650:-470;p.ground=false;p.on=null;p.airJump=true;burst(e.x+23,e.y+15,'#c29bff',26);shake=4;tone(220,.14,'triangle');tone(720,.2);}
@@ -86,7 +116,7 @@ orbPhase+=dt;const phase=orbPhase;const cycle=phase%15,orbit=mode!=='title'&&ent
 let tx,ty,tz;
 if(orbit){tx=player.x+19+Math.cos(theta)*88;ty=player.y-14+Math.sin(theta)*24;tz=30+Math.sin(theta)*70;}
 else{const ahead=cinema.stage?75:110;const sway=Math.sin(phase*.83)*25+Math.sin(phase*.31)*22;tx=player.x+19+player.face*(ahead+sway);ty=player.y-20+Math.sin(phase*1.65)*20+Math.sin(phase*.6)*8;tz=45+Math.sin(phase*.85)*18;}
-if(!cinema.stage){if(bridge&&player.x>2140&&player.x<2700){tx=2510+Math.sin(phase*2)*20;ty=554+Math.cos(phase*2.2)*18;}
+if(!cinema.stage&&!questActive){if(bridge&&player.x>2140&&player.x<2700){tx=2510+Math.sin(phase*2)*20;ty=554+Math.cos(phase*2.2)*18;}
 else if(!gate&&player.x>3070){tx=Math.min(player.x+120,3700)+Math.sin(phase)*22;ty=500+Math.sin(phase*1.8)*24;}
 else if(player.x>4440&&player.x<4650){tx=player.x+100+Math.sin(phase)*30;ty=player.y-65+Math.sin(phase*2)*20;}}
 const distance=Math.hypot(tx-orb.x,ty-orb.y);if(distance>950){orb.x=player.x-110;orb.y=player.y-25;orb.vx=orb.vy=0;}
@@ -113,6 +143,7 @@ if(cinema.closing&&cinema.blend<.025){if(cinema.stage==='intro')stopIntroAudio()
 for(const p of platforms)if(p.kind==='moving'){const old=p.y;p.y=p.baseY+Math.sin(t*p.speed)*p.amp;if(player.on===p)player.y+=p.y-old;}
 if(cinema.stage){const walking=cinema.stage==='final';stepPhysics(dt,{...I,axis:walking?.105:0,jump:false,jp:false,act:false},!walking);}else stepPhysics(dt,I,locked);
 player.squash*=Math.exp(-12*dt);shake*=Math.exp(-8*dt);
+if(!questActive){
 event('path',!cinema.stage&&player.x>550,()=>{say(['Por acá.']);showHint('SALTO dos veces · Doble salto');});
 event('cp1',player.x>1050&&player.x<1350&&player.ground,()=>{checkpoint={x:1050,y:620};});
 event('cp2',lettersComplete&&player.x>1950&&player.x<2350&&player.ground,()=>{checkpoint={x:1950,y:610};});
@@ -129,6 +160,7 @@ event('ropeHint',player.x>7160,()=>{showHint('En el aire, E / Ⓧ cerca del extr
 for(const spot of [{id:'tower',x:7210,y:288,end:7370},{id:'rope1',x:8210,y:403,end:8400},{id:'garden',x:9120,y:508,end:9460},{id:'tower2',x:10570,y:158,end:10770},{id:'rope2',x:11620,y:328,end:11830},{id:'lastRun',x:12720,y:478,end:12870}])event('cp_'+spot.id,player.ground&&player.x>=spot.x&&player.x<spot.end&&Math.abs(player.y-spot.y)<8,()=>{checkpoint={x:spot.x,y:spot.y};burst(player.x+19,player.y+30,'#a0e7d8',8);});
 event('almost',player.x>13830,()=>say(['Falta poquito.']));
 event('finale',player.x>14500&&player.ground,()=>{beginCinema('final',[{text:'Creo que ya está.',d:3},{text:'Ya encontré a quien estaba buscando.',d:3.7},'Alguien que sepa jugar.','Encontrar caminos.','Y seguir intentando.',{text:'Yo todavía no sé hacer todas esas cosas.',d:3.5},{text:'Soy demasiado chiquito.',d:3.2},{text:'Pero estoy creciendo.',d:4},{text:'Y algún día…',d:2.8},{text:'me vas a tener que enseñar.',d:4},{text:'Yo te enseño.',speaker:'VOS',d:3},{text:'Creo que elegí bien.',d:3.5}]);});
+}
 animateOrb(dt);
 for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=70*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);
 cam=lerp(cam,clamp(player.x-570+player.vx*.35,0,15600),1-Math.exp(-4*dt));
@@ -167,13 +199,16 @@ function worldLabels(){
 c.save();
 if((!lettersComplete||letterBanner>0)&&cinema.blend<.05){const x=54,y=54;round(x,y,292,78,14,'#071b2bdd');text(lettersComplete?'COTI':'ENCONTRÁ LAS LETRAS',x+146,y+24,14,lettersComplete?'#ffe18c':'#b7d8d3');letters.forEach((item,i)=>{const bx=x+38+i*67;round(bx,y+37,50,31,7,item.collected?'#ffd875':'#1b4151');text(item.char,bx+25,y+60,24,item.collected?'#263641':'#8db7b6');});}
 c.restore();
+if(questActive){
+if(player.x>4500){round(1030,54,500,78,14,'#071b2bdd');text(doorPassed?'¡PASASTE!':doorTime>0?'PUERTA · '+doorTime.toFixed(1)+' s':'BOTÓN · E / Ⓧ',1280,103,28,doorTime>0?'#ffcf78':'#cce7dc');}
+c.save();c.translate(-cam,0);round(4770,606,110,14,5,doorTime>0?'#8ef2d7':'#ffd875');text('E / Ⓧ',4825,585,25,'#ffe6a8');c.restore();return;}
 c.save();c.translate(-cam,0);
 if(!gate){round(3060,330,620,100,14,'#071c2ce8');text('4123 → 4133 → 4143 → ?',3370,390,36,'#d8e9df');['4144','4153','4243'].forEach((v,i)=>{round(3100+i*195,586,175,72,10,selection===i?'#d9c48b':'#284955');text(v,3187+i*195,634,36,selection===i?'#162a33':'#d7e4df');});if(player.x>3070&&player.x<3745)text(wrong?'Mirá cuánto cambia cada número.':padActive?'Ⓧ Elegir':'E · Elegir',3380,530,26,wrong?'#ffb3a0':'#bde1d6');}
 if(!switchOn&&player.x>4940&&player.y>620)text(padActive?'Ⓧ Activar':'E · Activar',5245,696,25);
 for(const r of ropes)if(Math.hypot(player.x+19-r.tipX,player.y+12-r.tipY)<130&&!player.rope)text(padActive?'Ⓧ':'E',r.tipX+40,r.tipY,28,'#fff2b1');
 c.restore();
 }
-function render(){c.clearRect(0,0,W,H);if(window.secretWorld){window.secretWorld.draw({t,cam,player,orb,platforms,walls,ropes,enemies,letters,lettersComplete,particles,gate,switchOn,bridge,mode,cinema,entrance,speaker:dialog?.speaker});if(mode!=='title'&&entrance===0&&cinema.blend<.05)worldLabels();}else{background();c.save();c.translate(-cam+(Math.random()-.5)*shake,0);terrain();adventureArt();for(const p of particles){c.globalAlpha=clamp(p.life/p.max,0,1);ellipse(p.x,p.y,p.r,p.r,p.color);}c.globalAlpha=1;character();companion();c.restore();}if(mode==='play'||mode==='pause')bubble();if(mode==='play'&&!cinema.stage&&cinema.blend<.01&&hintTime>0){round(260,800,1080,58,14,'#061b2ce8');text(hint,800,838,27,'#cce7dc');}const vignette=c.createRadialGradient(800,380,250,800,450,950);vignette.addColorStop(0,'#02091600');vignette.addColorStop(1,'#02091677');c.fillStyle=vignette;c.fillRect(0,0,W,H);
+function render(){c.clearRect(0,0,W,H);if(window.secretWorld){window.secretWorld.draw({t,cam,player,orb,platforms,walls,ropes,enemies,letters,lettersComplete,questActive,doorTime,doorPassed,particles,gate,switchOn,bridge,mode,cinema,entrance,speaker:dialog?.speaker});if(mode!=='title'&&entrance===0&&cinema.blend<.05)worldLabels();}else{background();c.save();c.translate(-cam+(Math.random()-.5)*shake,0);terrain();adventureArt();for(const p of particles){c.globalAlpha=clamp(p.life/p.max,0,1);ellipse(p.x,p.y,p.r,p.r,p.color);}c.globalAlpha=1;character();companion();c.restore();}if(mode==='play'||mode==='pause')bubble();if(mode==='play'&&!cinema.stage&&cinema.blend<.01&&hintTime>0){round(260,800,1080,58,14,'#061b2ce8');text(hint,800,838,27,'#cce7dc');}const vignette=c.createRadialGradient(800,380,250,800,450,950);vignette.addColorStop(0,'#02091600');vignette.addColorStop(1,'#02091677');c.fillStyle=vignette;c.fillRect(0,0,W,H);
 if(!window.secretWorld&&entrance>0){c.fillStyle=`rgba(2,6,12,${entrance})`;c.fillRect(0,0,W,H);c.save();const e=entrance*entrance*(3-2*entrance);c.translate(1100*e,470*e);c.scale(1+1.7*e,1+1.7*e);c.translate(-199*e,-660*e);character();companion();c.restore();}
 if(mode==='play'||mode==='pause')cinematicOverlay();
 if(mode==='end'){c.fillStyle=`rgba(4,12,25,${Math.min(ending/3,.97)})`;c.fillRect(0,0,W,H);if(ending>2){c.globalAlpha=clamp((ending-2)/2,0,1);text('EL SECRETO MÁS CHIQUITO',800,295,25,'#8dafb9');c.globalAlpha=1;}if(ending>5){c.globalAlpha=clamp((ending-5)/2,0,1);text('Vos también estás por aprender algo nuevo…',800,400,35,'#dae2da','center','Georgia');c.globalAlpha=1;}if(ending>8){c.globalAlpha=clamp((ending-8)/2,0,1);text('Cómo se siente ser',800,510,54,'#f4efdf','center','Georgia');text('PRIMO MAYOR.',800,610,80,'#ffda87','center','Georgia');ellipse(800,710+Math.sin(t*2)*5,9,10,'#ffda87');c.globalAlpha=1;}}
@@ -181,7 +216,7 @@ if(mode==='end'){c.fillStyle=`rgba(4,12,25,${Math.min(ending/3,.97)})`;c.fillRec
 let pendingInput={jp:false,act:false,pp:false};
 function frame(ms){const elapsed=Math.min((ms-last)/1000,.05);last=ms;acc+=elapsed;const I=input();for(const k of ['jp','act','pp']){pendingInput[k] ||= I[k];I[k]=pendingInput[k];}let first=true;while(acc>=1/120){update(1/120,first?I:{...I,jp:false,act:false,pp:false});first=false;pendingInput={jp:false,act:false,pp:false};acc-=1/120;}render();requestAnimationFrame(frame);}requestAnimationFrame(frame);
 // Read-only diagnostics for checking progress and runtime health.
-window.gameStatus=()=>({entrance,cinematic:cinema.stage,cinemaBlend:cinema.blend,orb:{x:orb.x,y:orb.y,z:orb.z},letters:letters.map(item=>({char:item.char,collected:item.collected})),lettersComplete,doubleJump:player.airJump,wall:player.wall,rope:!!player.rope,enemies:enemies.filter(e=>e.alive).length,mode,x:Math.round(player.x),y:Math.round(player.y),gate,switchOn,bridge,finalBridge,flags:{...flags},platforms:platforms.length});
+window.gameStatus=()=>({questActive,doorTime,doorPassed,entrance,cinematic:cinema.stage,cinemaBlend:cinema.blend,orb:{x:orb.x,y:orb.y,z:orb.z},letters:letters.map(item=>({char:item.char,collected:item.collected})),lettersComplete,doubleJump:player.airJump,wall:player.wall,rope:!!player.rope,enemies:enemies.filter(e=>e.alive).length,mode,x:Math.round(player.x),y:Math.round(player.y),gate,switchOn,bridge,finalBridge,flags:{...flags},platforms:platforms.length});
 })();
 
 
