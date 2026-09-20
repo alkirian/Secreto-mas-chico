@@ -1,6 +1,12 @@
 # El secreto más chiquito
 
-Juego web 2D para teclado y joystick. No necesita instalación ni conexión para jugar: abrir `dist/index.html` en Chrome o Edge. Para una vista local servida, ejecutar `node server.cjs` y abrir http://127.0.0.1:4187.
+Juego de plataformas 2.5D con Three.js para teclado y joystick. Las colisiones siguen en un plano lateral; el mundo, el protagonista, el compañero y los enemigos se dibujan en 3D con iluminación y sombras. No necesita instalación ni conexión para jugar: abrir `dist/index.html` en Chrome o Edge. Three.js está incluido en la copia local. Para una vista local servida, ejecutar `node server.cjs` y abrir http://127.0.0.1:4187.
+
+Las losas comparten piedra modular y un borde claro de aterrizaje. Las plataformas móviles tienen metal, guías y luz turquesa; las paredes escalables tienen franjas turquesas. La profundidad del escenario queda detrás del plano de colisión. Si no hay WebGL disponible, el juego muestra la vista 2D de respaldo.
+
+## Desarrollo
+
+El motor visual está en `src/world3d.js`. Después de cambiarlo, ejecutar `npm run build` para actualizar `dist/world3d.js`. La física y narrativa están en `dist/game.js`. Las versiones de Three.js y esbuild quedan fijadas en `package-lock.json`.
 
 ## Controles
 
