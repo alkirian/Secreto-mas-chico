@@ -10,7 +10,7 @@ La historia tiene tres cinemáticas: presentación, conversación de mitad y des
 
 El motor visual está en `src/world3d.js`. Después de cambiarlo, ejecutar `npm run build` para actualizar `dist/world3d.js`. La física y narrativa están en `dist/game.js`. Las versiones de Three.js y esbuild quedan fijadas en `package-lock.json`.
 
-El niño se construye y anima en `src/boy.js`: pelo castaño con mechones, ojos marrones, buzo azul y articulaciones de codos y rodillas. La carrera responde a la velocidad y el salto distingue ascenso, caída y aterrizaje. Durante las cinemáticas, cabeza y cuerpo siguen la posición 3D del punto. `node verify-boy.mjs` comprueba el seguimiento, la continuidad de los giros, las poses y la pausa.
+El niño se construye y anima en `src/boy.js`: carita redonda con ojos dibujados sobre su superficie, sonrisa pequeña, mejillas rosadas, pelo castaño suave y buzo azul. Las mangas y el pantalón se deforman de forma continua al doblar codos y rodillas. La carrera responde a la velocidad y el salto distingue ascenso, caída y aterrizaje. Durante las cinemáticas, cabeza y cuerpo siguen la posición 3D del punto. `node verify-boy.mjs` comprueba la superficie del rostro, la ropa, el seguimiento, la continuidad de los giros, las poses y la pausa.
 
 ## Controles
 

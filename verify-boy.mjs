@@ -8,6 +8,20 @@ globalThis.document={createElement:()=>({getContext:()=>new Proxy({createRadialG
 const state=()=>({t:0,player:{x:0,y:0,ground:true,face:1,vx:0,vy:0},orb:{x:130,y:-15,z:65},cinema:{stage:'intro'}});
 function tick(b,s,n=120,rate=60){for(let i=0;i<n;i++){s.t+=1/rate;b.update(s);}b.root.updateMatrixWorld(true);}
 const boy=createBoy(),s=state();
+for(const {eye} of boy.eyes){
+  const position=eye.geometry.attributes.position;
+  for(let i=0;i<position.count;i++){
+    const x=position.getX(i)+eye.position.x,y=position.getY(i)+eye.position.y-14;
+    const surface=17*Math.sqrt(Math.max(.001,1-(x/20)**2-(y/18.5)**2));
+    assert(Math.abs(position.getZ(i)-surface-.065)<.00001,'painted eyes follow the cheek surface without protruding');
+  }
+}
+const cloth=[];boy.root.traverse(o=>{if(o.isSkinnedMesh)cloth.push(o);});
+assert.equal(cloth.length,4,'both sleeves and trouser legs have continuous deforming fabric');
+for(const sleeve of cloth){
+  const weights=sleeve.geometry.attributes.skinWeight;
+  for(let i=0;i<weights.count;i++)assert(Math.abs(weights.getX(i)+weights.getY(i)-1)<.00001,'cloth weights preserve the surface');
+}
 for(const stage of ['intro','name','ageIntro','ageReveal','coopIntro','coopOutro','middle','final']){
   s.cinema.stage=stage;
   for(const [dx,dy,dz] of [[100,0,60],[-100,-20,50],[15,30,-120],[-5,-30,-120]]){
@@ -51,4 +65,4 @@ const paused=transforms();for(let i=0;i<40;i++)b.update(st);assert.deepEqual(tra
 st.player.rope={};tick(b,st,60);assert(b.arms.every(a=>a.shoulder.rotation.x<-2.5),'rope pose raises both attached arms');
 st.player.rope=null;st.player.ground=false;st.player.wall=1;tick(b,st,60);assert(b.arms.every(a=>a.shoulder.rotation.x<-1),'wall pose reaches forward');
 assert(transforms().every(Number.isFinite),'all rig transforms remain finite');
-console.log('PASS: 8 cinematic stages, 3D head/body tracking, continuous orbit, frame rates, run clearance, jumping, landing, pause, ropes and walls');
+console.log('PASS: flush face artwork, continuous cloth, 8 cinematic stages, 3D head/body tracking, continuous orbit, frame rates, run clearance, jumping, landing, pause, ropes and walls');
