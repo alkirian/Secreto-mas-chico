@@ -1,4 +1,4 @@
-const assert=require('assert');const {g,tick}=require('./verify-movement.cjs');g.enemies.forEach(e=>e.alive=false);
+const assert=require('assert');const {g,tick}=require('./verify-movement.cjs');g.unlockLetters();g.enemies.forEach(e=>e.alive=false);
 function jumpRoute(fromX,toX){const from=g.plats.find(p=>p.x===fromX),to=g.plats.find(p=>p.x===toX);assert(from&&to);let success=false;
 for(const delay of [20,30,40,50,60]){for(const offset of [55,85,120]){g.setPos(from.x+from.w-offset,from.y-62);g.p.ground=true;g.p.on=from;
 for(let n=0;n<230;n++){const dx=to.x+to.w/2-(g.p.x+19);g.stepPhysics(1/120,{axis:Math.abs(dx)>14?Math.sign(dx):0,jump:true,jp:n===0||n===delay,act:false},false);if(g.p.ground&&g.p.on===to){success=true;break;}if(n>12&&g.p.ground)break;}if(success)break;}if(success)break;}assert(success,`Unreachable jump ${fromX} -> ${toX}`);}
