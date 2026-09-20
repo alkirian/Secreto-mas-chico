@@ -22,6 +22,6 @@ if(g.p.ground&&obstacle){jp=true;jumpAge=0;}else if(jumpAge>=0){jumpAge++;if(jum
 g.stepPhysics(1/120,{axis:1,jump:true,jp,act:false},false);}
 assert(g.state.doorPassed,'obstacle sprint reaches door before timeout');
 for(const item of g.letters){g.setPos(item.x-19,item.y-50);tick(1,{},true);}
-assert(g.state.lettersComplete,'all four letters unlock name dialogue');assert(g.state.queue.some(l=>l.text==='Coti.'),'name reveal plays');
+assert(g.state.lettersComplete,'all four letters unlock name dialogue');assert.equal(g.state.cinema.stage,'name','name discovery enters cinematic mode');assert.equal(g.state.dialog.text,'','cinematic opens before the first line');assert.deepEqual(Array.from(g.state.queue,l=>l.text),['Coti.','¿Ese es tu nombre?','No sabía que las letras podían guardar a alguien.','Algún día quisiera aprender a leer como vos.']);
 g.reset();tick(3000);g.clearTalk();g.setPos(4800,558);g.p.ground=true;tick(1,{act:true},true);tick(930,{},true);assert.equal(g.state.doorTime,0,'door closes on timeout');tick(1,{act:true},true);assert(g.state.doorTime>7,'button can reopen door');
 console.log('PASS: separated letters, ten jumps, alternating wall shaft, falling platforms, timed obstacle sprint, timeout and retry');

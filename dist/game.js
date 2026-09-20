@@ -67,7 +67,7 @@ if(!flags.firstLetter){flags.firstLetter=true;say(['¿Una letra?']);}
 }
 if(!lettersComplete&&letters.length&&letters.every(item=>item.collected)){
 lettersComplete=true;letterBanner=7;dialog=null;queue=[];burst(player.x+19,player.y-24,'#ffdc77',55);tone(660,.3,'triangle',.06);tone(990,.55,'sine',.04);
-say([{text:'C… O… T… I…',d:2.4},{text:'Coti.',d:2.5},{text:'¿Ese es tu nombre?',d:2.8},{text:'Entonces vos sos Coti.',d:3},{text:'No sabía que las letras podían guardar a alguien.',d:4},{text:'Gracias por enseñarme a encontrarlas.',d:3.8},{text:'Algún día quiero aprender a leer como vos.',d:4}]);
+beginCinema('name',[{text:'Coti.',d:2.5},{text:'¿Ese es tu nombre?',d:3},{text:'No sabía que las letras podían guardar a alguien.',d:4.5},{text:'Algún día quisiera aprender a leer como vos.',d:4.5}]);
 }
 }
 function stepPhysics(dt,I,locked){
