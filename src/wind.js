@@ -55,20 +55,21 @@ export function createWind(scene){
   const trailGeometry=new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(trailPositions,3)).setAttribute('color',new THREE.BufferAttribute(trailColors,3));
   const trails=new THREE.LineSegments(trailGeometry,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.2,depthWrite:false,blending:THREE.AdditiveBlending}));trails.frustumCulled=false;root.add(trails);
   const wrap=(x,cam)=>cam-350+((x-(cam-350))%2300+2300)%2300;
-  return {update(t,cam){
+  return {update(t,cam,low=false){
+    leaves.count=low?16:64;dust.visible=!low;trails.visible=!low;
     time.value=t;
     // Analytic advection avoids frame-rate dependence and jumps after pausing.
     const travel=-(t*62-15*Math.cos(t*1.15));
-    for(let i=0;i<64;i++){
+    for(let i=0;i<leaves.count;i++){
       const x=wrap(noise(i*3)*2300+travel*(.65+noise(i)*.6),cam),phase=t*1.7+i*2.4;
       dummy.position.set(x,110+noise(i*7)*710+Math.sin(phase*.57)*28+Math.sin(x*.009+t)*12,-150+noise(i*13)*235);
       dummy.rotation.set(phase,Math.sin(phase*.8)*.7,-.3+Math.sin(phase*.63)*.8);
       const size=3+noise(i*17)*3;dummy.scale.set(size,size*.7,1);dummy.updateMatrix();leaves.setMatrixAt(i,dummy.matrix);
     }
     leaves.instanceMatrix.needsUpdate=true;
-    for(let i=0;i<180;i++)dustPositions.set([wrap(noise(i*5)*2300+travel*(.8+noise(i)*.6),cam),60+noise(i*9)*850+Math.sin(t*1.3+i)*16,-240+noise(i*11)*320],i*3);
+    for(let i=0;i<(low?0:180);i++)dustPositions.set([wrap(noise(i*5)*2300+travel*(.8+noise(i)*.6),cam),60+noise(i*9)*850+Math.sin(t*1.3+i)*16,-240+noise(i*11)*320],i*3);
     dustGeometry.attributes.position.needsUpdate=true;
-    for(let i=0;i<12;i++){
+    for(let i=0;i<(low?0:12);i++){
       const x=wrap(noise(i*21)*2300+travel*1.4,cam),y=170+noise(i*23)*610,gust=windStrength(t,x);
       for(let j=0;j<10;j++)for(let k=0;k<2;k++){
         const u=(j+k)/10,offset=(i*20+j*2+k)*3;

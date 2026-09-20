@@ -92,7 +92,7 @@ export function floatingTerrain(p, shear) {
   const magic=enchanted?new THREE.Points(magicGeometry,new THREE.PointsMaterial({color:0xffdc8a,size:4,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:false})):null;
   if(magic){magic.frustumCulled=false;root.add(magic);}
   let lastFormation=-1;
-  root.userData.updateTerrain=(t,hero,orb)=>{
+  root.userData.updateTerrain=(t,hero,orb,low=false)=>{
     if(enchanted){
       const progress=p.formation??(p.hidden?0:1);
       if(progress!==lastFormation){
@@ -118,9 +118,10 @@ export function floatingTerrain(p, shear) {
         }positions.needsUpdate=true;magic.material.opacity=Math.sin(progress*Math.PI)*.85;
       }
     }
+    grassGeometry.setDrawRange(0,Math.floor(count*(low?.16:1))*9);motes.visible=!low;
     uniforms.windTime.value=t;uniforms.islandX.value=root.position.x;
     uniforms.heroLocal.value.set(hero.x+19-root.position.x,900-hero.y-62-root.position.y);uniforms.heroSpeed.value=hero.vx;
-    for(let i=0;i<moteCount;i++){
+    for(let i=0;i<(low?0:moteCount);i++){
       const x=((random(seed+i*5)*p.w-(t*26-5*Math.cos(t*1.15))*(.7+random(seed+i)*.6))%p.w+p.w)%p.w;
       const near=Math.max(0,1-Math.abs(x-uniforms.heroLocal.value.x)/60)*Math.max(0,1-Math.abs(uniforms.heroLocal.value.y)/45);
       motePositions.set([x,12+random(seed+i*8)*25+Math.sin(t*1.8+i)*8+near*Math.min(18,Math.abs(hero.vx)*.06),-random(seed+i*3)*depth],i*3);

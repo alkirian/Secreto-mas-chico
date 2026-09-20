@@ -35,4 +35,10 @@ Las voces de introducción y nombre están en `dist/audio-intro.mp3` y `dist/aud
 
 Ver [LEEME.md](LEEME.md) para más detalles. Las pruebas automáticas no sustituyen una prueba con mando físico.
 
+## Televisores y equipos lentos
+
+En el menú y la pausa se puede elegir **Livianos (TV)** o **2D (máxima fluidez)** sin reiniciar la partida. El modo automático comienza liviano en navegadores de TV reconocidos y reduce el detalle si detecta una frecuencia de cuadros baja. El modo liviano usa 800×450, desactiva sombras y reduce vegetación y partículas. También se puede abrir `/?quality=low` o `/?quality=2d`.
+
+Conectar el joystick y presionar un botón con la página abierta: el menú muestra si el navegador lo entrega al juego. Se consultan mandos estándar, botones numéricos antiguos y la API prefijada cuando está disponible. Algunos navegadores de TV no ofrecen acceso a un mando aunque la TV lo reconozca; en ese caso hace falta un navegador/dispositivo compatible. Se admiten también las flechas y OK que algunos dispositivos entregan como teclas. `node verify-tv.cjs` comprueba estas rutas con mandos simulados; la compatibilidad física depende de la TV y el mando.
+
 Las licencias de Three.js y Amatic SC se incluyen en `dist/THREE-LICENSE.txt` y `dist/fonts/OFL.txt`. Este repositorio no otorga una licencia adicional sobre el juego ni sus grabaciones.
