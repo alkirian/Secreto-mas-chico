@@ -7,7 +7,7 @@ for(const delay of [24,36,48,60]){for(const offset of [50,85,120]){for(const p o
 g.setPos(from.x+from.w-offset,from.y-62);g.p.ground=true;g.p.on=from;
 for(let n=0;n<240;n++){const dx=to.x+to.w/2-g.p.x-19;g.update(1/120,{axis:Math.abs(dx)>12?Math.sign(dx):0,jump:true,jp:n===0||n===delay,act:false,pp:false});if(g.p.ground&&g.p.on===to){landed=true;break;}if(n>12&&g.p.ground)break;}if(landed)break;}if(landed)break;}
 assert(landed,`counting route ${fromX} -> ${toX}`);}
-function light(n){const v=g.lights[n-1];g.setPos(v.x-19,v.y-62);g.p.ground=true;tick(1,{act:true});}
+function light(n){const v=g.lights[n-1];g.setPos(v.x-19,v.y-62);g.p.ground=true;tick(1);}
 light(2);assert.equal(g.state.countValue,0,'lights cannot be activated out of order');
 jump(6520,7060);light(1);assert.equal(g.state.countValue,1);light(1);assert.equal(g.state.countValue,1,'no duplicate counting');
 jump(7060,7540);jump(7540,7850);light(2);
