@@ -96,8 +96,8 @@
     // Collected letters disappear in both renderers, from the same array.
     for(const item of s.letters)if(!item.collected&&seen(s,item.x,80))badge(c,item.char,item.x,item.y-Math.sin(s.t*2+item.bob)*8,'#ffe17e');
     if(s.questActive||s.countActive){
-      if(seen(s,6030,150)){magicWall(c,6106,620,370,s.questActive&&s.doorTime<=0,'#ffc75b',s.t);}
-      if(s.questActive&&seen(s,4770,110))lever(c,4825,616,s.doorTime>0);
+      if(seen(s,6030,150)){magicWall(c,6106,620,370,s.questActive&&!s.doorOpen,'#ffc75b',s.t);}
+      if(s.questActive&&seen(s,4770,110))lever(c,4825,616,s.doorOpen);
     }else if(!s.coop){
       if(seen(s,3690,170))gate(c,3770,710,320,!s.gate,'#8ef2d7');
       if(seen(s,5460,170))magicWall(c,5540,770,240,!s.switchOn,'#ffd786',s.t);

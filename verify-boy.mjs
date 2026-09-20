@@ -65,4 +65,24 @@ const paused=transforms();for(let i=0;i<40;i++)b.update(st);assert.deepEqual(tra
 st.player.rope={};tick(b,st,60);assert(b.arms.every(a=>a.shoulder.rotation.x<-2.5),'rope pose raises both attached arms');
 st.player.rope=null;st.player.ground=false;st.player.wall=1;tick(b,st,60);assert(b.arms.every(a=>a.shoulder.rotation.x<-1),'wall pose reaches forward');
 assert(transforms().every(Number.isFinite),'all rig transforms remain finite');
-console.log('PASS: flush face artwork, continuous cloth, 8 cinematic stages, 3D head/body tracking, continuous orbit, frame rates, run clearance, jumping, landing, pause, ropes and walls');
+// The ending keeps a right-facing profile even when the orb moves behind him.
+for(const rate of [30,120]){
+  const flying=createBoy(),end=state(),sway=[],heights=[];
+  end.mode='end';end.ending=0;end.cinema.stage='final';end.player.face=-1;
+  for(let i=0;i<rate*12;i++){
+    end.t=end.ending=(i+1)/rate;end.orb.x=-120+Math.sin(end.t)*80;
+    flying.update(end,1,end.t);flying.root.updateMatrixWorld(true);
+    if(end.ending<5)continue;
+    const forward=new THREE.Vector3(0,0,1).transformDirection(flying.root.matrixWorld);
+    const gaze=new THREE.Vector3(0,0,1).transformDirection(flying.head.matrixWorld);
+    const hips=flying.hips.getWorldPosition(new THREE.Vector3());
+    assert(forward.x>.99&&Math.abs(forward.z)<.025,'ending body faces right in profile');
+    assert(gaze.x>.98,'ending gaze stays toward the direction of flight');
+    for(const leg of flying.legs){const foot=leg.ankle.getWorldPosition(new THREE.Vector3());assert(foot.x<hips.x-15,'both feet trail behind the body');}
+    assert(flying.head.localToWorld(new THREE.Vector3(0,13,0)).x>hips.x+7,'body leans into the drift');
+    sway.push(flying.hips.rotation.x);heights.push(flying.root.position.y);
+  }
+  assert(Math.max(...sway)-Math.min(...sway)>.045,'body gently sways with inertia');
+  assert(Math.max(...heights)-Math.min(...heights)>5,'ending remains visibly levitating');
+}
+console.log('PASS: flush face artwork, continuous cloth, cinematic tracking, frame rates, movement, pause and right-facing final flight with trailing feet');

@@ -25,15 +25,15 @@ assert(!g.p.vine&&g.p.ground&&g.p.on?.x===1920,'holding jump alone reaches the e
 assert.equal(g.state.checkpoint.x,1950,'summit saves a checkpoint');
 g.setPos(1950,1050);tick(1,{},true);assert.equal(g.p.x,1950,'fall after summit returns to its ledge');
 restore();const fragile=g.plats.find(p=>p.kind==='crumble');g.setPos(fragile.x+40,fragile.y-63);g.p.vy=100;tick(2,{},true);assert(fragile.age>0,'landing starts warning');tick(82,{},true);assert(fragile.falling,'fragile platform falls');g.setPos(4510,558);tick(400,{},true);assert(!fragile.falling&&fragile.y===fragile.baseY,'platform reforms for retries');
-g.setPos(6040,558);tick(30,{axis:1},true);assert(g.p.x<=6032,'closed timed door blocks');
-g.setPos(4800,558);g.p.ground=true;tick(1,{act:true},true);assert(g.state.doorTime>7,'button opens door');
+g.setPos(6040,558);tick(30,{axis:1},true);assert(g.p.x<=6032,'closed door blocks');
+g.setPos(4800,558);g.p.ground=true;tick(1,{act:true},true);assert(g.state.doorOpen,'lever opens door');
 let jumpAge=-1;
 for(let n=0;n<850&&!g.state.doorPassed;n++){let jp=false;const obstacle=g.walls.find(w=>w.x>=5100&&w.x>g.p.x&&w.x-g.p.x<155);
 if(g.p.ground&&obstacle){jp=true;jumpAge=0;}else if(jumpAge>=0){jumpAge++;if(jumpAge===35)jp=true;}
 g.stepPhysics(1/120,{axis:1,jump:true,jp,act:false},false);}
-assert(g.state.doorPassed,'obstacle sprint reaches door before timeout');
+assert(g.state.doorPassed,'obstacle route reaches the open door');
 for(const item of g.letters){g.setPos(item.x-19,item.y-50);tick(1,{},true);}
 assert(g.state.lettersComplete,'all four letters unlock name dialogue');assert.equal(g.state.cinema.stage,'name','name discovery enters cinematic mode');assert.equal(g.state.dialog.text,'','cinematic opens before the first line');assert(g.state.dialog.left<.2,'voice starts with the cinematic');assert.deepEqual(Array.from(g.state.queue,l=>l.text),['Coti.','¿Ese es tu nombre?','No sabía que las letras podían guardar a alguien.','Algún día quisiera aprender a leer como vos.']);
 const discoveryX=g.p.x;tick(1450,{axis:1,jp:true,jump:true});assert.equal(g.state.cinema.stage,'ageIntro','name cinematic leads directly to age question');assert(g.state.countActive&&!g.state.questActive,'second stage opens automatically');assert(Math.abs(g.p.x-discoveryX)<1,'transition retains player position and blocks input');assert(g.state.queue.every(v=>v.speaker!=='VOS'),'only the point speaks');tick(1800);assert.equal(g.state.cinema.stage,null,'counting begins after the question');assert(!g.state.flags.numbers&&!g.state.flags.calm,'legacy story does not interrupt the new stage');
-g.reset();tick(3000);g.clearTalk();g.setPos(4800,558);g.p.ground=true;tick(1,{act:true},true);tick(930,{},true);assert.equal(g.state.doorTime,0,'door closes on timeout');tick(1,{act:true},true);assert(g.state.doorTime>7,'button can reopen door');
-console.log('PASS: separated letters, ten jumps, automatic vine grip/climb/rest/descent/release/exit/checkpoint, falling platforms, timed obstacle sprint, timeout and retry');
+g.reset();tick(3000);g.clearTalk();g.setPos(4800,558);g.p.ground=true;tick(1,{act:true},true);tick(7200,{},true);assert(g.state.doorOpen,'door remains open after a full minute');tick(1,{act:true},true);assert(g.state.doorOpen,'repeated activation does not close door');g.respawn();assert(g.state.doorOpen,'respawn preserves the open door');g.setPos(6040,558);tick(60,{axis:1},true);assert(g.state.doorPassed,'door can be crossed long after activation');g.reset();assert(!g.state.doorOpen,'restart resets the lever and closes the door');
+console.log('PASS: separated letters, ten jumps, automatic vine grip/climb/rest/descent/release/exit/checkpoint, falling platforms, obstacle route, permanent lever door, respawn and restart');

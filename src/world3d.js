@@ -62,6 +62,7 @@ this.camera.layers.enable(1);
 this.particleGeometry=new THREE.BufferGeometry();this.particlePositions=new Float32Array(1536);this.particleColors=new Float32Array(1536);this.particleGeometry.setAttribute('position',new THREE.BufferAttribute(this.particlePositions,3));this.particleGeometry.setAttribute('color',new THREE.BufferAttribute(this.particleColors,3));this.particleSystem=new THREE.Points(this.particleGeometry,new THREE.PointsMaterial({size:5,map:glowMap,transparent:true,vertexColors:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:false}));this.particleSystem.frustumCulled=false;this.scene.add(this.particleSystem);
 this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();window.dispatchEvent(new Event('blur'));document.querySelector('#renderNotice').textContent='La imagen se pausó. Recargá para volver a jugar.';});this.canvas.addEventListener('webglcontextrestored',()=>location.reload());
 window.renderInfo=()=>({engine:'Three.js',revision:THREE.REVISION,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,platforms:this.platforms.size,quality:this.quality,width:this.canvas.width,height:this.canvas.height,shadows:this.renderer.shadowMap.enabled});
+window.worldScreenPosition=(x,y,z=0)=>{const point=new THREE.Vector3(x,HEIGHT-y,z).project(this.camera);return {x:(point.x+1)*WIDTH*.5,y:(1-point.y)*HEIGHT*.5};};
 window.orbScreenPosition=()=>{if(!window.secretWorld)return;const point=new THREE.Vector3(this.orb.position.x,this.orb.position.y,this.orb.position.z).project(this.camera);return {x:(point.x+1)*WIDTH*.5,y:(1-point.y)*HEIGHT*.5};};
 }
 setQuality(quality){this.quality=quality;this.low=quality==='low';this.renderer.setPixelRatio(window.secretDisplay?.resolution??(this.low?.5:1));this.renderer.shadowMap.enabled=quality==='high';}
@@ -123,8 +124,11 @@ draw(s){
 this.renderer.info.reset();
 const {t,cam,player:p,orb:o}=s;
 const endFrame=s.mode==='end'?THREE.MathUtils.smoothstep(s.ending||0,0,6):0;
-const finale=s.mode==='end'?1:s.cinema?.stage==='final'?THREE.MathUtils.smoothstep(s.cinema.time,0,5):0;const entrance=s.entrance||0,ease=entrance*entrance*(3-2*entrance),blend=Math.max(s.cinema?.blend||0,entrance>0?1:0,ease),nameScene=['name','ageIntro','ageReveal','coopIntro','coopOutro'].includes(s.cinema?.stage),conversationX=nameScene?(p.x+o.x)/2:p.x+60,focusX=THREE.MathUtils.lerp(THREE.MathUtils.lerp(cam+800,conversationX,blend),p.x-105,ease)-endFrame*225,focusY=THREE.MathUtils.lerp(450,HEIGHT-p.y+4,blend)+finale*100,arc=Math.sin((s.cinema?.time||0)*.22)*(nameScene?.085:.025)*blend;
-this.camera.zoom=1+(nameScene?1.35:1.7)*blend;this.camera.position.set(focusX+Math.sin(arc)*1300,focusY+(nameScene?52:30)*blend,1300);this.camera.lookAt(focusX,focusY,nameScene?28:0);this.camera.updateProjectionMatrix();this.sky.position.x=cam+800;this.moon.position.x=cam+1260-cam*.035;this.stars.position.x=cam*.8;this.sun.position.set(cam+400,1250,750);this.sun.target.position.set(cam+800,350,-40);this.sun.target.updateMatrixWorld();
+const gameplayZoom=s.mode==='title'||s.mode==='end'?1:1.15;
+// Zoom around the player to preserve their screen position and the view ahead.
+const gameplayX=THREE.MathUtils.lerp(p.x+p.w/2,cam+800,1/gameplayZoom),gameplayY=THREE.MathUtils.lerp(HEIGHT-p.y-p.h/2,450,1/gameplayZoom);
+const finale=s.mode==='end'?1:s.cinema?.stage==='final'?THREE.MathUtils.smoothstep(s.cinema.time,0,5):0;const entrance=s.entrance||0,ease=entrance*entrance*(3-2*entrance),blend=Math.max(s.cinema?.blend||0,entrance>0?1:0,ease),nameScene=['name','ageIntro','ageReveal','coopIntro','coopOutro'].includes(s.cinema?.stage),conversationX=nameScene?(p.x+o.x)/2:p.x+60,focusX=THREE.MathUtils.lerp(THREE.MathUtils.lerp(gameplayX,conversationX,blend),p.x-105,ease)-endFrame*225,focusY=THREE.MathUtils.lerp(gameplayY,HEIGHT-p.y+4,blend)+finale*100,arc=Math.sin((s.cinema?.time||0)*.22)*(nameScene?.085:.025)*blend;
+this.camera.zoom=THREE.MathUtils.lerp(gameplayZoom,nameScene?2.35:2.7,blend);this.camera.position.set(focusX+Math.sin(arc)*1300,focusY+(nameScene?52:30)*blend,1300);this.camera.lookAt(focusX,focusY,nameScene?28:0);this.camera.updateProjectionMatrix();this.sky.position.x=cam+800;this.moon.position.x=cam+1260-cam*.035;this.stars.position.x=cam*.8;this.sun.position.set(cam+400,1250,750);this.sun.target.position.set(cam+800,350,-40);this.sun.target.updateMatrixWorld();
 this.wind.update(t,cam,this.low);
 this.moon.position.x=THREE.MathUtils.lerp(this.moon.position.x,focusX+180,finale);this.moon.position.y=THREE.MathUtils.lerp(735,focusY+115,finale);this.moon.scale.setScalar(1-finale*.55);
 this.stars.position.x=THREE.MathUtils.lerp(cam*.8,focusX-600,finale);this.stars.position.y=-finale*390;this.stars.material.opacity=.7+finale*.3;this.stars.position.x-=s.mode==='end'?((s.ending||0)*8)%1800:0;
@@ -171,8 +175,8 @@ this.orb.position.lerpVectors(this.endOrigin,starTarget,flight);
 const screen=this.orb.position.clone().project(this.camera);
 this.endStar={x:(screen.x+1)*800,y:(1-screen.y)*450,flight};
 }else{this.endOrigin=null;this.endStar=null;}
-this.gates[0].visible=!s.gate;this.gates[1].visible=false;this.switchWall.userData.update(t,s.switchOn);this.letterWall.userData.update(t,!s.questActive||s.doorTime>0);this.letterGate.visible=s.questActive||s.countActive;this.letterGate.position.set(6106,HEIGHT-620,0);this.letterCurtain.visible=s.questActive&&s.doorTime<=0;for(const g of this.gates)g.parent.visible=!s.questActive&&!s.countActive;
-const leverOn=s.questActive?s.doorTime>0:s.switchOn;
+this.gates[0].visible=!s.gate;this.gates[1].visible=false;this.switchWall.userData.update(t,s.switchOn);this.letterWall.userData.update(t,!s.questActive||s.doorOpen);this.letterGate.visible=s.questActive||s.countActive;this.letterGate.position.set(6106,HEIGHT-620,0);this.letterCurtain.visible=s.questActive&&!s.doorOpen;for(const g of this.gates)g.parent.visible=!s.questActive&&!s.countActive;
+const leverOn=s.questActive?s.doorOpen:s.switchOn;
 this.switch.visible=!s.countActive;this.switch.position.set(s.questActive?4825:5250,s.questActive?284:150,0);
 this.switchLever.rotation.z=leverOn?-.65:.65;
 this.switchLamp.material=leverOn?mat(0xadf9c9,{emissive:0x5cc68d,emissiveIntensity:1}):mat(0xffd587,{emissive:0xe6a23c,emissiveIntensity:1});

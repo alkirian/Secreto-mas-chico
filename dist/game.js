@@ -8,7 +8,7 @@ function syncGameSfx(){}
 let mode='title',t=0,cam=0,last=0,acc=0,muted=false,audio,introAudio=null,nameAudio=null,numberAudio=null,numberResume=false,musicAudio=null,ambientAudio=null,beat=0,prevJump=false,prevAction=false,prevPause=false,prevSound=false,prevGraphics=false,buffer=0,coyote=0,shake=0,ending=0,dialog=null,queue=[],flags={},particles=[],platforms=[],checkpoint={x:180,y:660},padActive=false;
 let musicTarget=.32,ambientTarget=.55;
 let walls=[],ropes=[],vines=[],enemies=[],letters=[],lettersComplete=false,letterBanner=0,hint='',hintTime=0;
-let entrance=1,questActive=true,doorTime=0,doorPassed=false;
+let entrance=1,questActive=true,doorOpen=false,doorPassed=false;
 let countActive=false,countLights=[],countValue=0,countComplete=false,chapterFade=0;
 let coop=null;
 let chapterVoice=null;
@@ -16,7 +16,7 @@ const QUEST_DOOR=6070;
 let cinema={stage:null,blend:0,time:0,closing:false},orbPhase=0;
 let player={x:180,y:668,vx:0,vy:0,w:38,h:62,ground:true,face:1,squash:0},orb={x:340,y:560,vx:0,vy:0},gate=false,switchOn=false,bridge=false,finalBridge=false,selection=1,wrong=0;
 function rect(x,y,w,h,kind='stone',extra={}){platforms.push({x,y,w,h,kind,...extra});}
-function level(first=true){coop=null;questActive=first;countActive=false;if(first){countLights=[];countValue=0;countComplete=false;chapterFade=0;}doorTime=0;doorPassed=false;platforms=[];walls=[];ropes=[];vines=[];player.vine=null;enemies=[];letters=[];lettersComplete=false;letterBanner=0;rect(-500,730,1350,400);rect(1010,700,380,400);rect(1510,640,270,450);rect(1910,690,500,400);rect(2460,600,220,38,'moving',{baseY:600,amp:55,speed:1.1});rect(2800,690,1070,500);rect(3890,710,460,450);rect(4410,610,200,32);rect(4690,510,210,32);rect(4950,410,300,32);rect(4380,770,1200,300);rect(5310,640,220,32);rect(5580,710,1070,400);
+function level(first=true){coop=null;questActive=first;countActive=false;if(first){countLights=[];countValue=0;countComplete=false;chapterFade=0;}doorOpen=false;doorPassed=false;platforms=[];walls=[];ropes=[];vines=[];player.vine=null;enemies=[];letters=[];lettersComplete=false;letterBanner=0;rect(-500,730,1350,400);rect(1010,700,380,400);rect(1510,640,270,450);rect(1910,690,500,400);rect(2460,600,220,38,'moving',{baseY:600,amp:55,speed:1.1});rect(2800,690,1070,500);rect(3890,710,460,450);rect(4410,610,200,32);rect(4690,510,210,32);rect(4950,410,300,32);rect(4380,770,1200,300);rect(5310,640,220,32);rect(5580,710,1070,400);
 // Every elevated ledge belongs to a traversable upper route.
 rect(1160,530,170,28);rect(1420,415,180,28);rect(1700,430,160,28);rect(1940,510,170,28);
 letter('C',640,670);letter('O',1220,466);letter('T',1480,351);letter('I',1760,366);
@@ -148,14 +148,13 @@ else if(p.age>0){p.age+=dt;if(p.age>.65){p.falling=true;burst(p.x+p.w/2,p.y,'#e8
 }
 }
 function updateQuest(dt,I){
-doorTime=Math.max(0,doorTime-dt);
-if(player.ground&&player.x>4740&&player.x<4920&&I.act){doorTime=7.5;showHint('¡La puerta está abierta! Tenés 7,5 segundos.');tone(830,.2);}
-if(player.x>QUEST_DOOR+65&&doorTime>0)doorPassed=true;
-if(!doorPassed&&doorTime===0&&player.x+38>QUEST_DOOR)player.x=QUEST_DOOR-38;
+if(!doorOpen&&player.ground&&player.x>4740&&player.x<4920&&I.act){doorOpen=true;showHint('¡La puerta quedó abierta!');tone(830,.2);}
+if(player.x>QUEST_DOOR+65&&doorOpen)doorPassed=true;
+if(!doorPassed&&!doorOpen&&player.x+38>QUEST_DOOR)player.x=QUEST_DOOR-38;
 for(const spot of [{id:'qC',x:1250,y:558,end:1500},{id:'qO',x:2850,y:348,end:3070},{id:'qT',x:4510,y:558,end:4800}])event(spot.id,player.ground&&player.x>=spot.x&&player.x<spot.end&&Math.abs(player.y-spot.y)<8,()=>{checkpoint={x:spot.x,y:spot.y};});
 event('qWalls',player.x>1500,()=>showHint('Acercate a la planta · Mantené SALTO para trepar'));
 event('qFragile',player.x>2850,()=>showHint('Las plataformas doradas caen al pisarlas. ¡Seguí saltando!'));
-event('qButton',player.x>4670,()=>showHint('Enter / Ⓧ junto a la palanca · Abrí el muro y corré'));
+event('qButton',player.x>4670,()=>showHint(controlLabels().action+' junto a la palanca · La puerta queda abierta'));
 }
 function wall(x,y,w,h){const p={x,y,w,h,kind:'wall',solid:true};walls.push(p);platforms.push(p);}
 function rope(x,y,len){ropes.push({x,y,len,angle:-.45,speed:0,tipX:x-Math.sin(.45)*len,tipY:y+Math.cos(.45)*len});}
@@ -224,7 +223,7 @@ p.y+=p.vy*dt;p.ground=false;p.on=null;
 for(const plat of platforms){if(plat.falling||plat.hidden||plat.disabled)continue;if(p.x+p.w<=plat.x||p.x>=plat.x+plat.w)continue;
 if(p.vy>=0&&oldY+p.h<=plat.y+5&&p.y+p.h>=plat.y){if(p.vy>180){p.squash=.22;burst(p.x+19,plat.y,'#80bdbb',7);tone(110,.08,'triangle',.025);}p.y=plat.y-p.h;p.vy=0;p.ground=true;p.on=plat;p.airJump=true;if(plat.kind==='crumble'&&plat.age===0)plat.age=.001;}
 else if(plat.solid&&p.vy<0&&oldY>=plat.y+plat.h&&p.y<plat.y+plat.h){p.y=plat.y+plat.h;p.vy=0;}}
-if(questActive&&!doorPassed&&doorTime===0&&p.x+38>QUEST_DOOR)p.x=QUEST_DOOR-38;if(!questActive&&!countActive&&!gate&&p.x+38>3745&&p.x<3830)p.x=3707;if(!questActive&&!countActive&&!switchOn&&p.x+38>5520&&p.x<5580)p.x=5482;
+if(questActive&&!doorPassed&&!doorOpen&&p.x+38>QUEST_DOOR)p.x=QUEST_DOOR-38;if(!questActive&&!countActive&&!gate&&p.x+38>3745&&p.x<3830)p.x=3707;if(!questActive&&!countActive&&!switchOn&&p.x+38>5520&&p.x<5580)p.x=5482;
 for(const e of enemies){if(!e.alive)continue;e.x+=e.dir*e.speed*dt;if(e.x<e.min||e.x>e.max){e.x=clamp(e.x,e.min,e.max);e.dir*=-1;}
 if(p.x+p.w>e.x&&p.x<e.x+e.w&&p.y+p.h>e.y&&p.y<e.y+e.h){
 if(p.vy>0&&oldY+p.h<=e.y+14){e.alive=false;p.y=e.y-p.h;p.vy=I.jump?-650:-470;p.ground=false;p.on=null;p.airJump=true;burst(e.x+23,e.y+15,'#c29bff',26);shake=4;tone(220,.14,'triangle');tone(720,.2);}
@@ -367,7 +366,7 @@ cam=lerp(cam,clamp(player.x-570+player.vx*.35,0,coop?21600:15600),1-Math.exp(-4*
 function round(x,y,w,h,r,fill){c.fillStyle=fill;c.beginPath();c.roundRect(x,y,w,h,r);c.fill();}
 function ellipse(x,y,rx,ry,fill){c.fillStyle=fill;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();}
 function text(s,x,y,size=28,color='#f4f1db',align='center',font='system-ui'){c.fillStyle=color;c.font=`500 ${size}px ${font}`;c.textAlign=align;c.fillText(s,x,y);}
-function scene2DState(){return {t,cam,player,orb,platforms,walls,ropes,vines,enemies,letters,countLights,countValue,questActive,countActive,coop,gate,switchOn,doorTime,cinema,mode,ending};}
+function scene2DState(){return {t,cam,player,orb,platforms,walls,ropes,vines,enemies,letters,countLights,countValue,questActive,countActive,coop,gate,switchOn,doorOpen,cinema,mode,ending};}
 function background(){window.secretScene2D?.background(c,scene2DState());}
 function terrain(){window.secretScene2D?.terrain(c,scene2DState());}
 function adventureArt(){window.secretScene2D?.objects(c,scene2DState());}
@@ -392,7 +391,7 @@ if(coop)return;
 if(countActive){
 round(54,88,570,64,16,'#071b2be8');
 for(let i=1;i<=6;i++){const x=85+(i-1)*87;round(x,96,72,40,9,i<=countValue?'#b6f5d9':i===countValue+1?'#496d72':'#1c3946');text(String(i),x+36,126,28,i<=countValue?'#173e3e':'#e3f4e8');}
-const next=countLights.find(v=>!v.lit);if(next){const sx=next.x-cam;if(sx>W-80){text(next.n+' →',W-150,112,24,'#b6f5d9');}else if(sx<80)text('← '+next.n,150,192,24,'#b6f5d9');}
+const next=countLights.find(v=>!v.lit);if(next){const sx=window.worldScreenPosition?.(next.x,next.y)?.x??next.x-cam;if(sx>W-80){text(next.n+' →',W-150,112,24,'#b6f5d9');}else if(sx<80)text('← '+next.n,150,192,24,'#b6f5d9');}
 c.save();c.translate(-cam,0);for(const v of countLights){}c.restore();return;
 }
 c.save();
@@ -402,15 +401,15 @@ if(questActive){
 const controls=controlLabels();
 if(!flags.firstLetter){round(330,150,940,112,16,'#071b2be8');text(controls.move+' · Moverte     '+(controls.jump==='Saltar'?'↑':controls.jump)+' · Saltar',800,192,27,'#f4e7bd');text(controls.verb+' '+controls.jump+' otra vez en el aire: doble salto',800,235,26,'#c9efb4');}
 if(player.vine){round(390,150,820,60,14,'#071b2bdd');text('Mantené '+controls.jump+' para trepar · '+controls.action+' para soltarte',800,190,25,'#c9efb4');}
-if(player.x>4500){round(1030,54,500,78,14,'#071b2bdd');text(doorPassed?'✓':doorTime>0?doorTime.toFixed(1)+' s':controls.action+' · Abrir',1280,103,28,doorTime>0?'#ffcf78':'#cce7dc');}
-c.save();c.translate(-cam,0);text(controls.action,4825,445,25,'#ffe6a8');c.restore();return;}
+if(player.x>4500){round(1030,54,500,78,14,'#071b2bdd');text(doorOpen?'✓ Puerta abierta':controls.action+' · Abrir',1280,103,28,doorOpen?'#ffcf78':'#cce7dc');}
+const leverLabel=window.worldScreenPosition?.(4825,445)??{x:4825-cam,y:445};if(!doorOpen)text(controls.action,leverLabel.x,leverLabel.y,25,'#ffe6a8');return;}
 c.save();c.translate(-cam,0);
 if(!gate){round(3060,330,620,100,14,'#071c2ce8');text('4123 → 4133 → 4143 → ?',3370,390,36,'#d8e9df');['4144','4153','4243'].forEach((v,i)=>{round(3100+i*195,586,175,72,10,selection===i?'#d9c48b':'#284955');text(v,3187+i*195,634,36,selection===i?'#162a33':'#d7e4df');});if(player.x>3070&&player.x<3745)text(padActive?'Ⓧ':'E',3380,530,26,wrong?'#ffb3a0':'#bde1d6');}
 if(!switchOn&&player.x>4940&&player.y>620)text(padActive?'Ⓧ':'Enter',5245,578,25);
 for(const r of ropes)if(Math.hypot(player.x+19-r.tipX,player.y+12-r.tipY)<130&&!player.rope)text(padActive?'Ⓧ':'E',r.tipX+40,r.tipY,28,'#fff2b1');
 c.restore();
 }
-function render(){c.clearRect(0,0,W,H);if(window.secretWorld){window.secretWorld.draw({t,cam,player,orb,coop,platforms,walls,ropes,vines,enemies,letters,lettersComplete,questActive,countActive,countLights,countValue,doorTime,doorPassed,particles,gate,switchOn,bridge,mode,cinema,entrance,ending,speaker:dialog?.voice&&dialog.text?(dialog.speaker||'PUNTO'):null});if(mode!=='title'&&entrance===0&&cinema.blend<.05)worldLabels();}else{background();c.save();c.translate(-cam+(Math.random()-.5)*shake,0);terrain();adventureArt();for(const p of particles){c.globalAlpha=p.opacity??clamp(p.life/p.max,0,1);ellipse(p.x,p.y,p.r,p.r,p.color);}c.globalAlpha=1;character();companion();c.restore();if(mode!=='title'&&entrance===0&&cinema.blend<.05)worldLabels();}const vignette=c.createRadialGradient(800,380,250,800,450,950);vignette.addColorStop(0,'#02091600');vignette.addColorStop(1,'#02091677');c.fillStyle=vignette;c.fillRect(0,0,W,H);
+function render(){c.clearRect(0,0,W,H);if(window.secretWorld){window.secretWorld.draw({t,cam,player,orb,coop,platforms,walls,ropes,vines,enemies,letters,lettersComplete,questActive,countActive,countLights,countValue,doorOpen,doorPassed,particles,gate,switchOn,bridge,mode,cinema,entrance,ending,speaker:dialog?.voice&&dialog.text?(dialog.speaker||'PUNTO'):null});if(mode!=='title'&&entrance===0&&cinema.blend<.05)worldLabels();}else{background();c.save();c.translate(-cam+(Math.random()-.5)*shake,0);terrain();adventureArt();for(const p of particles){c.globalAlpha=p.opacity??clamp(p.life/p.max,0,1);ellipse(p.x,p.y,p.r,p.r,p.color);}c.globalAlpha=1;character();companion();c.restore();if(mode!=='title'&&entrance===0&&cinema.blend<.05)worldLabels();}const vignette=c.createRadialGradient(800,380,250,800,450,950);vignette.addColorStop(0,'#02091600');vignette.addColorStop(1,'#02091677');c.fillStyle=vignette;c.fillRect(0,0,W,H);
 if(!window.secretWorld&&entrance>0){c.fillStyle=`rgba(2,6,12,${entrance})`;c.fillRect(0,0,W,H);c.save();const e=entrance*entrance*(3-2*entrance);c.translate(1100*e,470*e);c.scale(1+1.7*e,1+1.7*e);c.translate(-199*e,-660*e);character();companion();c.restore();}
 if(mode==='play'||mode==='pause'){cinematicOverlay();bubble();}else if(mode==='end')cinematicOverlay();
 if(chapterFade>0){c.fillStyle=`rgba(2,6,12,${1-Math.abs(chapterFade-1)})`;c.fillRect(0,0,W,H);}
@@ -429,5 +428,5 @@ if(shine>0){c.save();c.globalAlpha=shine;const halo=c.createRadialGradient(star.
 let pendingInput={jp:false,act:false,pp:false};
 let lastRender=0;function frame(ms){window.secretDisplay?.sample(ms-last);const elapsed=Math.min((ms-last)/1000,.05);last=ms;acc+=elapsed;const I=input();for(const k of ['jp','act','pp','mp','yp']){pendingInput[k] ||= I[k];I[k]=pendingInput[k];}let first=true;while(acc>=1/120){update(1/120,first?I:{...I,jp:false,act:false,pp:false,mp:false,yp:false});first=false;pendingInput={jp:false,act:false,pp:false,mp:false,yp:false};acc-=1/120;}const renderInterval=window.secretDisplay?.frameInterval?.()||0;if(!renderInterval||ms-lastRender>=renderInterval){render();lastRender=ms;}window.secretMobile?.setMode(mode);requestAnimationFrame(frame);}requestAnimationFrame(frame);
 // Read-only diagnostics for checking progress and runtime health.
-window.gameStatus=()=>({coop:coop?{open:coop.open,bridge:coop.bridge,done:coop.done}:null,questActive,countActive,countValue,countComplete,countLights:countLights.map(v=>({n:v.n,lit:v.lit})),doorTime,doorPassed,entrance,cinematic:cinema.stage,cinemaBlend:cinema.blend,orb:{x:orb.x,y:orb.y,z:orb.z},letters:letters.map(item=>({char:item.char,collected:item.collected})),lettersComplete,doubleJump:player.airJump,wall:player.wall,vine:!!player.vine,rope:!!player.rope,enemies:enemies.filter(e=>e.alive).length,mode,x:Math.round(player.x),y:Math.round(player.y),gate,switchOn,bridge,finalBridge,flags:{...flags},platforms:platforms.length});
+window.gameStatus=()=>({coop:coop?{open:coop.open,bridge:coop.bridge,done:coop.done}:null,questActive,countActive,countValue,countComplete,countLights:countLights.map(v=>({n:v.n,lit:v.lit})),doorOpen,doorPassed,entrance,cinematic:cinema.stage,cinemaBlend:cinema.blend,orb:{x:orb.x,y:orb.y,z:orb.z},letters:letters.map(item=>({char:item.char,collected:item.collected})),lettersComplete,doubleJump:player.airJump,wall:player.wall,vine:!!player.vine,rope:!!player.rope,enemies:enemies.filter(e=>e.alive).length,mode,x:Math.round(player.x),y:Math.round(player.y),gate,switchOn,bridge,finalBridge,flags:{...flags},platforms:platforms.length});
 })();

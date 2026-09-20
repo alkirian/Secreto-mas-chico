@@ -11,8 +11,8 @@ const rectAt=(x,y,w)=>calls.some(call=>call.op==='fillRect'&&call.args[0]===x&&c
 let s=game.state();
 for(const letter of s.letters){draw({...s,cam:letter.x-800});assert(calls.some(call=>call.op==='fillText'&&call.args[0]===letter.char),'uncollected letter is visible');}
 const collected={...s.letters[0],collected:true};draw({...s,cam:collected.x-800,letters:[collected]});assert(!calls.some(call=>call.op==='fillText'),'collected letter disappears');
-draw({...s,cam:5300,doorTime:0});assert(rectAt(6070,260,72),'closed timed curtain matches the real door position');
-draw({...s,cam:5300,doorTime:5});assert(!rectAt(6070,260,72),'open door is not drawn as solid');
+draw({...s,cam:5300,doorOpen:false});assert(rectAt(6070,260,72),'closed lever curtain matches the real door position');
+draw({...s,cam:5300,doorOpen:true});assert(!rectAt(6070,260,72),'open door is not drawn as solid');
 draw({...s,cam:2800});assert(!rectAt(3734,400,72),'legacy number gate does not appear during the letter quest');
 for(const p of s.platforms){draw({...s,cam:p.x-800,platforms:[p]},'terrain');assert(calls.some(call=>call.op==='translate'&&call.args[0]===p.x&&call.args[1]===p.y),'each real platform and wall uses its collider origin');}
 game.beginCounting();s=game.state();
@@ -24,4 +24,4 @@ draw({...s,cam:hidden.x-800,platforms:[hidden]},'terrain');assert.equal(calls.le
 draw({...s,cam:hidden.x-800,platforms:[{...hidden,formation:.5}]},'terrain');assert(calls.some(call=>call.op==='translate'&&call.args[1]===hidden.y+175),'forming platforms rise toward their actual position');
 draw({...s,cam:14800,platforms:s.walls.filter(p=>p.x===15080).map(p=>({...p,disabled:true}))},'terrain');assert.equal(calls.length,0,'opened cooperative walls disappear');
 game.render();
-console.log('PASS: shared collider coordinates, all letters and six beacons, timed gate, cooperation plate/lamp, formation, disabled walls, no stale gate and no state mutation');
+console.log('PASS: shared collider coordinates, all letters and six beacons, lever gate, cooperation plate/lamp, formation, disabled walls, no stale gate and no state mutation');
