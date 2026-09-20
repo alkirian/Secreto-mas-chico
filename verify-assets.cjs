@@ -24,7 +24,7 @@ assert.equal(box.window.numberVoiceData.length, 6);
 for (let n = 1; n <= 6; n++) {
   assert(Buffer.from(box.window.numberVoiceData[n - 1], 'base64').equals(fs.readFileSync(path.join(__dirname, 'sfx', `${n}.mp3`))), `Wrong voice for ${n}`);
 }
-const chapters = { ageIntro: 'dist/audio/ageIntro.mp3', ageReveal: 'dist/audio/ageReveal.mp3', coopIntro: 'sfx/ya me enseñaste a leer tu nombre, y a contar hasta seis.mp3' };
+const chapters = { ageIntro: 'dist/audio/ageIntro.mp3', ageReveal: 'dist/audio/ageReveal.mp3', coopIntro: 'sfx/coop-intro.mp3' };
 for (const [name, file] of Object.entries(chapters)) {
   assert(Buffer.from(box.window.chapterVoiceData[name], 'base64').equals(fs.readFileSync(path.join(__dirname, file))), `Wrong chapter voice: ${name}`);
 }
