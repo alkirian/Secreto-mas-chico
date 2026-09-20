@@ -4,6 +4,8 @@ Juego de plataformas 2.5D con Three.js para teclado y joystick. Las colisiones s
 
 Las losas comparten piedra modular y un borde claro de aterrizaje. Las plataformas móviles tienen metal, guías y luz turquesa; las paredes escalables tienen franjas turquesas. La profundidad del escenario queda detrás del plano de colisión. Si no hay WebGL disponible, el juego muestra la vista 2D de respaldo.
 
+La historia tiene tres cinemáticas: presentación, conversación de mitad y despedida final. La cámara se acerca suavemente y aparecen barras negras con subtítulos que distinguen PUNTO y VOS. El control vuelve al terminar las primeras dos escenas; las frases durante los desafíos siguen siendo interactivas. En el final, ambos avanzan automáticamente por un tramo seguro mientras conversan. El punto flota con inercia y alterna acercamientos, alejamientos y órbitas con profundidad.
+
 ## Desarrollo
 
 El motor visual está en `src/world3d.js`. Después de cambiarlo, ejecutar `npm run build` para actualizar `dist/world3d.js`. La física y narrativa están en `dist/game.js`. Las versiones de Three.js y esbuild quedan fijadas en `package-lock.json`.

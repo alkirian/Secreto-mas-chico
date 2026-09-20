@@ -2,10 +2,10 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const noop=()=>{},ctx=new Proxy({measureText:s=>({width:s.length*16}),createLinearGradient:()=>({addColorStop:noop}),createRadialGradient:()=>({addColorStop:noop})},{get:(o,k)=>o[k]||noop,set:(o,k,v)=>(o[k]=v,true)}),els={};
 const element=s=>els[s]??=(s==='#game'?{getContext:()=>ctx}:{classList:{add:noop,remove:noop},focus:noop});
 const sandbox={console,Math,Set,document:{querySelector:element,querySelectorAll:()=>[],body:{classList:{add:noop,remove:noop}},addEventListener:noop},navigator:{},window:{},addEventListener:noop,requestAnimationFrame:noop};
-let src=fs.readFileSync('dist/game.js','utf8').replace('})();','window.test={update,start,reset,render,stepPhysics,respawn,get p(){return player},get plats(){return platforms},get walls(){return walls},get ropes(){return ropes},get enemies(){return enemies},get state(){return {mode,gate,switchOn,bridge,finalBridge,flags,checkpoint,queue,dialog}},setPos(x,y){Object.assign(player,{x,y,vx:0,vy:0,ground:false,on:null,wall:0,wallLock:0,rope:null,airJump:true,invincible:0});buffer=coyote=0;},clearTalk(){queue=[];dialog=null;}};})();');vm.runInNewContext(src,sandbox);
+let src=fs.readFileSync('dist/game.js','utf8').replace('})();','window.test={update,start,reset,render,stepPhysics,respawn,get p(){return player},get plats(){return platforms},get walls(){return walls},get ropes(){return ropes},get enemies(){return enemies},get state(){return {mode,gate,switchOn,bridge,finalBridge,flags,checkpoint,queue,dialog,cinema,orb}},setPos(x,y){Object.assign(player,{x,y,vx:0,vy:0,ground:false,on:null,wall:0,wallLock:0,rope:null,airJump:true,invincible:0});buffer=coyote=0;},clearTalk(){queue=[];dialog=null;}};})();');vm.runInNewContext(src,sandbox);
 const g=sandbox.window.test,I={axis:0,jump:false,jp:false,act:false,pp:false};
 const tick=(n,inp={},physics=false)=>{for(let i=0;i<n;i++){const v={...I,...inp,jp:i===0&&!!inp.jp,act:i===0&&!!inp.act};physics?g.stepPhysics(1/120,v,false):g.update(1/120,v);}};
-g.start();tick(120);assert(g.p.ground);tick(35,{jump:true,jp:true});const beforeSecond=g.p.y;tick(25,{jump:true,jp:true});assert(g.p.y<beforeSecond-70,'second jump gains height');assert.equal(g.p.airJump,false);const v=g.p.vy;tick(1,{jump:true,jp:true});assert(g.p.vy>v,'third jump denied');tick(180);assert(g.p.ground);
+g.start();tick(2800);assert(g.p.ground);tick(35,{jump:true,jp:true});const beforeSecond=g.p.y;tick(25,{jump:true,jp:true});assert(g.p.y<beforeSecond-70,'second jump gains height');assert.equal(g.p.airJump,false);const v=g.p.vy;tick(1,{jump:true,jp:true});assert(g.p.vy>v,'third jump denied');tick(180);assert(g.p.ground);
 g.setPos(1000,1050);tick(1);assert.equal(g.p.x,180,'fall respawn');
 g.setPos(2200,590);tick(1);assert(g.state.bridge);g.setPos(3110,620);tick(1,{act:true});assert(!g.state.gate,'wrong number');g.setPos(3330,620);tick(1,{act:true});assert(g.state.gate,'correct number');g.setPos(5250,708);tick(1,{act:true});assert(g.state.switchOn,'maze switch');
 g.clearTalk();g.setPos(5900,640);tick(1);tick(4000);assert(g.state.flags.calmDone,'calm resolves');
@@ -15,3 +15,5 @@ const e=g.enemies[0];g.setPos(e.x,e.y-65);g.p.vy=350;tick(5,{jump:true},true);as
 g.setPos(6500,638);tick(1);assert(g.state.finalBridge);g.setPos(14550,588);tick(2);assert(g.state.flags.finale);tick(7000);assert.equal(g.state.mode,'end');g.render();const count=g.plats.length;g.reset();assert.equal(g.plats.length,count-2,'restart removes dynamic bridge');assert(g.enemies.every(e=>e.alive));assert.equal(g.ropes.length,2);assert(!g.state.gate);
 console.log('PASS: double jump, third-jump limit, landing, respawn, puzzle, maze, both walls, both ropes, stomp, damage, final and reset');
 module.exports={g,tick};
+
+
